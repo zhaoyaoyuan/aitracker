@@ -17,7 +17,8 @@ permissions:
 
 env:
   NODE_VERSION: 24
-  RELEASE_CHANNEL: ${{ contains(github.ref_name, '-') && 'beta' || 'stable' }}
+  RELEASE_REF: ${{ inputs.ref || github.ref_name }}
+  RELEASE_CHANNEL: ${{ contains(inputs.ref || github.ref_name, '-') && 'beta' || 'stable' }}
 
 jobs:
   release-contract:
@@ -27,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -38,7 +41,7 @@ jobs:
         run: npm ci
 
       - name: Verify tag and package versions
-        run: npm run verify:release-contract -- --tag "$GITHUB_REF_NAME" --channel "$RELEASE_CHANNEL"
+        run: npm run verify:release-contract -- --tag "$RELEASE_REF" --channel "$RELEASE_CHANNEL"
 
       # Installer names are versionless so `releases/latest/download/<name>`
       # stays valid across releases. Fail before four runners start if the
@@ -143,12 +146,12 @@ jobs:
       - name: Verify tag before packaging (macOS)
         if: runner.os == 'macOS'
         shell: bash
-        run: npm run verify:release-contract -- --tag "$GITHUB_REF_NAME" --channel "$RELEASE_CHANNEL"
+        run: npm run verify:release-contract -- --tag "$RELEASE_REF" --channel "$RELEASE_CHANNEL"
 
       - name: Verify tag before packaging (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: npm run verify:release-contract -- --tag "$env:GITHUB_REF_NAME" --channel "$env:RELEASE_CHANNEL"
+        run: npm run verify:release-contract -- --tag "$env:RELEASE_REF" --channel "$env:RELEASE_CHANNEL"
 
       - name: Build installer
         run: ${{ matrix.command }}
@@ -158,14 +161,14 @@ jobs:
         shell: bash
         env:
           RELEASE_PLATFORM: ${{ matrix.platform }}
-        run: npm run verify:release-contract -- --tag "$GITHUB_REF_NAME" --channel "$RELEASE_CHANNEL" --release-dir release --platform "$RELEASE_PLATFORM"
+        run: npm run verify:release-contract -- --tag "$RELEASE_REF" --channel "$RELEASE_CHANNEL" --release-dir release --platform "$RELEASE_PLATFORM"
 
       - name: Verify expected installer name (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
           RELEASE_PLATFORM: ${{ matrix.platform }}
-        run: npm run verify:release-contract -- --tag "$env:GITHUB_REF_NAME" --channel "$env:RELEASE_CHANNEL" --release-dir release --platform "$env:RELEASE_PLATFORM"
+        run: npm run verify:release-contract -- --tag "$env:RELEASE_REF" --channel "$env:RELEASE_CHANNEL" --release-dir release --platform "$env:RELEASE_PLATFORM"
 
       - name: Upload installer for release assembly
         uses: actions/upload-artifact@v4
@@ -205,19 +208,19 @@ jobs:
 
       - name: Verify assembled release artifacts
         shell: bash
-        run: npm run verify:release-contract -- --tag "$GITHUB_REF_NAME" --channel "$RELEASE_CHANNEL" --release-dir release
+        run: npm run verify:release-contract -- --tag "$RELEASE_REF" --channel "$RELEASE_CHANNEL" --release-dir release
 
       - name: Generate release metadata and checksums
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_REF#v}"
           npm run release:metadata -- --release-dir release --version "$version" --channel "$RELEASE_CHANNEL"
 
       - name: Refuse to reuse an existing release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+          if gh release view "$RELEASE_REF" >/dev/null 2>&1; then
             echo "::error::A GitHub release already exists for $GITHUB_REF_NAME; refusing to overwrite it."
             exit 1
           fi
@@ -231,7 +234,7 @@ jobs:
       - name: Prepare release notes
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_REF#v}"
           if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
             {
               echo "## What's changed"
@@ -264,7 +267,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          release_args=("$GITHUB_REF_NAME" --draft --verify-tag --title "$RELEASE_TITLE" --notes-file release-notes.md)
+          release_args=("$RELEASE_REF" --draft --verify-tag --title "$RELEASE_TITLE" --notes-file release-notes.md)
           if [[ "$RELEASE_CHANNEL" == "beta" ]]; then
             release_args+=(--prerelease)
           fi
@@ -274,7 +277,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" \
+          gh release upload "$RELEASE_REF" \
             release/AITracker-*.dmg \
             release/AITracker-Setup-*.exe \
             release/release-metadata.json \
