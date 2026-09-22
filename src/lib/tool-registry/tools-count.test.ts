@@ -128,9 +128,11 @@ test("skill/market/usage capabilities match the frozen baseline sets", () => {
     // Deliberate post-baseline addition (TokenTracker-sourced): Kilo Code
     // tasks ui_messages.json (Cline family) native reader.
     "kilocode",
+    // Deliberate post-baseline addition: Cursor modern agent-transcripts
+    // usage is handled by the native transcript reader.
+    "cursor",
   ]);
   const BASELINE_USAGE_ADAPTER = new Set([
-    "cursor",
     "kimi-code",
     "opencode",
     "github-copilot",
@@ -199,6 +201,7 @@ test("skill/market/usage capabilities match the frozen baseline sets", () => {
           def.id === "aipy" ||
             def.id === "pi" ||
             def.id === "omp" ||
+            def.id === "cursor" ||
             def.id === "hermes" ||
             def.id === "workbuddy" ||
             def.id === "zcode" ||

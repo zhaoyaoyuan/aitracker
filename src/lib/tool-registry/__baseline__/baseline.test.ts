@@ -95,6 +95,12 @@ test("baseline usage parsing matches usageLogParsingFor for every tool", () => {
       assert.equal(usageLogParsingFor(tool.id), "native");
       continue;
     }
+    if (tool.id === "cursor") {
+      // Expected diff (Cursor transcript support): modern Cursor stores usage
+      // in agent-transcripts and is now handled by the native reader.
+      assert.equal(usageLogParsingFor(tool.id), "native");
+      continue;
+    }
     if (tool.id === "droid" || tool.id === "codebuddy") {
       // Expected diff (Droid/CodeBuddy usage support, TokenTracker-sourced):
       // native readers over ~/.factory/sessions settings.json (mtime
@@ -187,7 +193,17 @@ test("baseline usage adapters remain represented (native sources included)", () 
       glob: path.glob,
       format: path.format,
     }));
-    if (expected.source === "gemini-cli") {
+    if (expected.source === "cursor") {
+      // Expected diff (Cursor transcript support): the legacy usage glob is
+      // replaced by the native transcript source in ~/.cursor/projects.
+      assert.deepEqual(actualPaths, [
+        {
+          root: ".cursor/projects",
+          glob: "*/agent-transcripts/*/*.jsonl",
+          format: "jsonl",
+        },
+      ]);
+    } else if (expected.source === "gemini-cli") {
       assert.deepEqual(actualPaths, [
         {
           root: ".gemini/tmp",

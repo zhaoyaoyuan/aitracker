@@ -263,20 +263,14 @@ export const BASELINE_USAGE_ADAPTERS: readonly BaselineUsageAdapter[] = [
     source: "cursor",
     paths: [
       {
-        root: "Library/Application Support/Cursor/User/globalStorage",
-        glob: "**/*usage*.json",
-        format: "json",
+        root: ".cursor/projects",
+        glob: "*/agent-transcripts/*/*.jsonl",
+        format: "jsonl",
       },
-      {
-        root: "AppData/Roaming/Cursor/User/globalStorage",
-        glob: "**/*usage*.json",
-        format: "json",
-      },
-      { root: ".cursor", glob: "**/*usage*.jsonl", format: "jsonl" },
     ],
     customMapping: false,
     hasSqliteQuery: false,
-    maxFileSizeBytes: GENERIC_MAX,
+    maxFileSizeBytes: NATIVE_MAX,
   },
   {
     source: "gemini-cli",
