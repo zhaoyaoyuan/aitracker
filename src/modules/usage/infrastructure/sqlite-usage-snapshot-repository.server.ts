@@ -14,6 +14,7 @@ import type {
   SnapshotRepository,
 } from "../../../platform/snapshot-runtime/contracts.ts";
 import type {
+  LocalUsageMeasurement,
   LocalUsageSource,
   LocalUsageSourceSummary,
   LocalUsageToolCategory,
@@ -278,7 +279,7 @@ export function createSqliteUsageSnapshotRepository(
               projectRefHash: String(row.project_ref_hash || "unknown"),
               projectLabel: String(row.project_label || "unknown"),
               projectKind: String(row.project_kind) as UsageProjectKind,
-              measurement: String(row.measurement) as "observed" | "estimated",
+              measurement: String(row.measurement) as LocalUsageMeasurement,
               events: n(row.event_count),
               inputTokens: n(row.input_tokens),
               cachedInputTokens: n(row.cached_input_tokens),

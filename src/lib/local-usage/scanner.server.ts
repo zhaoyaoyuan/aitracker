@@ -493,7 +493,8 @@ function isCachedEvent(
     nonNegativeNumber(event.totalTokens) &&
     (event.measurement == null ||
       event.measurement === "observed" ||
-      event.measurement === "estimated") &&
+      event.measurement === "estimated" ||
+      event.measurement === "reported") &&
     isCachedContext(event.context)
   );
 }
@@ -1385,9 +1386,13 @@ function claudeEventFromRecord(
 
   const inputTokens = tokenValue(usage.input_tokens);
   const cachedInputTokens = tokenValue(usage.cache_read_input_tokens);
-  const cacheCreationInputTokens = tokenValue(
-    usage.cache_creation_input_tokens,
-  );
+  const nestedCacheCreation = asObject(usage.cache_creation);
+  const cacheCreationInputTokens =
+    tokenValue(usage.cache_creation_input_tokens) ||
+    // Newer Claude Code builds also write a nested breakdown; when the flat
+    // field is missing, sum its ephemeral parts instead of undercounting.
+    tokenValue(nestedCacheCreation?.ephemeral_5m_input_tokens) +
+      tokenValue(nestedCacheCreation?.ephemeral_1h_input_tokens);
   const outputTokens = tokenValue(usage.output_tokens);
   const reasoningOutputTokens = tokenValue(usage.reasoning_output_tokens);
   // P1-8: totalTokens includes every consumed component — reasoning is parsed
@@ -2694,6 +2699,354 @@ async function parseCursorTranscriptUsageFile(
           },
         ]
       : [],
+  };
+}
+
+/**
+ * Cursor composer (IDE chat) usage, read from the `composerData:*` rows of
+ * the Cursor IDE `state.vscdb` (see providers/cursor.tool.json). Modern
+ * Cursor stopped writing per-message usage but still reports one cumulative
+ * context figure per composer under `promptTokenBreakdown.totalUsedTokens`,
+ * alongside the context-window maximum and a category breakdown.
+ *
+ * PRIVACY: the row values hold full conversation bodies. Only the token
+ * metadata below is decoded into the result — message text, tool arguments
+ * and command output are never read into memory beyond JSON.parse and are
+ * never retained, logged or persisted. The parsed events are one per
+ * composer, labelled `measurement: "reported"` because the figure is
+ * tool-authored but cumulative (context-side), not per-message billing.
+ */
+const CURSOR_COMPOSER_MATCH_TOLERANCE_MS = 30 * 60 * 1000;
+
+function parseCursorComposerDb(
+  file: FileCandidate & { format: UsageAdapterPath["format"] },
+  adapter: UsageAdapterContract,
+  signal: AbortSignal | undefined,
+  budget: SqliteRowBudget,
+  cutoffTime: number,
+): {
+  events: LocalUsageEvent[];
+  identities: string[];
+  malformedLines: number;
+  truncated: boolean;
+  diagnostics: LocalUsageDiagnostic[];
+} {
+  signal?.throwIfAborted();
+  const events: LocalUsageEvent[] = [];
+  const identities: string[] = [];
+  let malformedLines = 0;
+  let database: DatabaseSync | undefined;
+  try {
+    database = new DatabaseSync(file.path, { readOnly: true });
+    let exceeded = false;
+    for (const row of database
+      .prepare(
+        `SELECT key, value FROM cursorDiskKV
+         WHERE key LIKE 'composerData:%'
+         ORDER BY rowid DESC
+         LIMIT ?`,
+      )
+      .iterate(budget.limit) as IterableIterator<Record<string, unknown>>) {
+      signal?.throwIfAborted();
+      if (budget.exhausted()) {
+        exceeded = true;
+        break;
+      }
+      budget.take();
+      const key = stringValue(row.key);
+      const composerId =
+        key != null && key.startsWith("composerData:")
+          ? key.slice("composerData:".length)
+          : undefined;
+      if (composerId == null || composerId === "") continue;
+      let value: JsonObject | undefined;
+      if (typeof row.value === "string") {
+        try {
+          value = asObject(JSON.parse(row.value));
+        } catch {
+          malformedLines += 1;
+          continue;
+        }
+      }
+      if (value == null) continue;
+      const breakdown = asObject(value.promptTokenBreakdown);
+      const totalUsedTokens = tokenValue(breakdown?.totalUsedTokens);
+      const timestampDate = timestampValue(
+        value.lastUpdatedAt ?? value.createdAt,
+      );
+      // Composers without a reported breakdown or timestamp carry no usage
+      // evidence; skipping them is not a parse failure.
+      if (totalUsedTokens <= 0 || timestampDate == null) continue;
+      const timestampMs = timestampDate.getTime();
+      if (timestampMs < cutoffTime) continue;
+      const workspace = asObject(value.workspaceIdentifier);
+      const uri = asObject(workspace?.uri);
+      const project =
+        stringValue(uri?.fsPath) ??
+        stringValue(uri?.path) ??
+        stringValue(value.project) ??
+        "unknown";
+      const sessionId = sessionIdFromStructuredValue(adapter.source, composerId);
+      if (sessionId == null) continue;
+      events.push({
+        source: adapter.source as LocalUsageSource,
+        timestamp: timestampDate.toISOString(),
+        sessionId,
+        model: "cursor-composer",
+        project,
+        inputTokens: totalUsedTokens,
+        cachedInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        // The breakdown is context-side: it has no output split, so the
+        // entire figure is reported as input and the total mirrors it.
+        outputTokens: 0,
+        reasoningOutputTokens: 0,
+        totalTokens: totalUsedTokens,
+        measurement: "reported",
+      });
+      identities.push(
+        privacyFingerprint("cursor", [
+          composerId,
+          timestampMs,
+          totalUsedTokens,
+        ]),
+      );
+    }
+    const diagnostics: LocalUsageDiagnostic[] = [];
+    if (exceeded) {
+      diagnostics.push(
+        diagnostic(
+          adapter,
+          "query-truncated",
+          file.path,
+          `SQLite 查询结果超过 ${budget.limit} 行读取上限，其余记录未统计。`,
+        ),
+      );
+    }
+    return { events, identities, malformedLines, truncated: exceeded, diagnostics };
+  } catch {
+    return {
+      events: [],
+      identities: [],
+      malformedLines: 0,
+      truncated: false,
+      diagnostics: [
+        diagnostic(
+          adapter,
+          "query-failed",
+          file.path,
+          "SQLite 只读查询执行失败，已跳过。",
+        ),
+      ],
+    };
+  } finally {
+    database?.close();
+  }
+}
+
+/**
+ * Drop transcript estimates that describe the same session as a reported
+ * composer figure. Cursor unifies IDE chats and Agent CLI runs in one
+ * history, so a transcript whose mtime lands within the tolerance of a
+ * composer's lastUpdated/createdAt is the same activity counted twice —
+ * the tool-authored number wins, the character-based estimate is dropped.
+ * Transcripts with no composer counterpart (older CLI sessions) keep their
+ * labelled estimate.
+ */
+function dedupeCursorTranscriptEstimates(
+  events: readonly LocalUsageEvent[],
+): LocalUsageEvent[] {
+  const reportedTimestamps = events
+    .filter(
+      (event) =>
+        event.measurement === "reported" && event.model === "cursor-composer",
+    )
+    .map((event) => Date.parse(event.timestamp))
+    .filter((time) => !Number.isNaN(time));
+  if (reportedTimestamps.length === 0) return [...events];
+  return events.filter((event) => {
+    if (event.measurement !== "estimated") return true;
+    const time = Date.parse(event.timestamp);
+    if (Number.isNaN(time)) return true;
+    return !reportedTimestamps.some(
+      (reported) =>
+        Math.abs(reported - time) <= CURSOR_COMPOSER_MATCH_TOLERANCE_MS,
+    );
+  });
+}
+
+/**
+ * Cursor native scan over BOTH declared shapes: agent-transcript JSONL logs
+ * (character-based estimates) and the IDE composer database (tool-reported
+ * cumulative context figures). Cache entries follow the generic contract —
+ * identities for the transcript events, WAL/window/budget fields for the
+ * database — so restarts reuse both. After the per-file unique merge the
+ * estimates covered by a reported composer figure are dropped.
+ */
+async function scanCursorUsageAdapter(
+  adapter: UsageAdapterContract,
+  platformOs: PlatformOs,
+  homeDirectory: string,
+  cutoffTime: number,
+  nowTime: number,
+  maxFiles: number,
+  cachedFiles: Map<string, PersistentFileEntry>,
+  signal: AbortSignal | undefined,
+  overrides: UsageOverrideMap | undefined,
+  maxSqliteRows: number,
+  lookbackDays: number,
+): Promise<SourceScanResult> {
+  const pathConfigs = adapterPathsForPlatform(adapter.paths, platformOs);
+  const placements = rebaseUsagePathConfigs(
+    pathConfigs,
+    homeDirectory,
+    usageOverrideFor(adapter.source, overrides),
+  );
+  const selected = await collectAdapterFiles(
+    placements,
+    cutoffTime,
+    maxFiles,
+    signal,
+  );
+  const cacheEntries: PersistentGenericFileEntry[] = [];
+  const diagnostics: LocalUsageDiagnostic[] = [];
+  let filesRead = 0;
+  let filesReused = 0;
+  let filesParsed = 0;
+  let malformedLines = 0;
+  const budget = createSqliteRowBudget(maxSqliteRows);
+
+  for (const file of selected.files) {
+    signal?.throwIfAborted();
+    const cached = cachedFiles.get(file.path) as
+      | PersistentGenericFileEntry
+      | undefined;
+    const isSqlite = file.format === "sqlite";
+    const budgetIdentity = cached?.sqliteBudget;
+    const charge = cached?.events.length;
+    const canReuse =
+      cached != null &&
+      charge != null &&
+      (!isSqlite ||
+        (budgetIdentity != null &&
+          (budgetIdentity.truncated === false ||
+            budgetIdentity.limit === maxSqliteRows) &&
+          charge <= budget.remaining() &&
+          sqliteWalMatches(file, cached, lookbackDays)));
+    let entry: PersistentGenericFileEntry;
+    if (canReuse && cached != null) {
+      if (isSqlite && charge != null) budget.take(charge);
+      entry = cached;
+      filesReused += 1;
+    } else if (file.size > adapter.maxFileSizeBytes && !isSqlite) {
+      entry = {
+        source: adapter.source as PersistentGenericFileEntry["source"],
+        path: file.path,
+        mtimeMs: file.modifiedAt,
+        size: file.size,
+        malformedLines: 0,
+        events: [],
+        diagnostics: [
+          diagnostic(
+            adapter,
+            "file-too-large",
+            file.path,
+            `日志超过 ${adapter.maxFileSizeBytes} 字节读取上限，已跳过。`,
+          ),
+        ],
+      };
+      filesParsed += 1;
+    } else if (isSqlite) {
+      const parsed = parseCursorComposerDb(
+        file,
+        adapter,
+        signal,
+        budget,
+        cutoffTime,
+      );
+      entry = {
+        source: adapter.source as PersistentGenericFileEntry["source"],
+        path: file.path,
+        mtimeMs: file.modifiedAt,
+        size: file.size,
+        malformedLines: parsed.malformedLines,
+        wal:
+          file.wal == null
+            ? null
+            : { mtimeMs: file.wal.modifiedAt, size: file.wal.size },
+        windowDays: lookbackDays,
+        sqliteBudget: sqliteBudgetIdentity(maxSqliteRows, parsed.truncated),
+        events: parsed.events,
+        identities: parsed.identities,
+        diagnostics: parsed.diagnostics,
+      };
+      filesParsed += 1;
+    } else {
+      const parsed = await parseCursorTranscriptUsageFile(
+        file,
+        sessionIdFromRelativeFile(
+          adapter.source,
+          relative(homeDirectory, file.path),
+        ),
+        signal,
+      );
+      entry = {
+        source: adapter.source as PersistentGenericFileEntry["source"],
+        path: file.path,
+        mtimeMs: file.modifiedAt,
+        size: file.size,
+        malformedLines: parsed.malformedLines,
+        events: parsed.identifiedEvents.map((identified) => identified.event),
+        identities: parsed.identifiedEvents.map(
+          (identified) => identified.identity,
+        ),
+        diagnostics: parsed.diagnostics,
+      };
+      filesParsed += 1;
+    }
+    cacheEntries.push(entry);
+    diagnostics.push(...entry.diagnostics);
+    malformedLines += entry.malformedLines;
+    filesRead += 1;
+  }
+
+  // Unique merge across every considered file (cache-reused and freshly
+  // parsed alike), then the estimate-vs-reported cross-format dedupe.
+  const byIdentity = new Map<string, LocalUsageEvent>();
+  for (const entry of cacheEntries) {
+    entry.events.forEach((event, index) => {
+      const identity =
+        entry.identities?.[index] ??
+        privacyFingerprint(adapter.source, [
+          event.sessionId,
+          event.timestamp,
+          event.totalTokens,
+        ]);
+      if (
+        isTimestampInRange(new Date(event.timestamp), cutoffTime, nowTime) &&
+        !byIdentity.has(identity)
+      ) {
+        byIdentity.set(identity, event);
+      }
+    });
+  }
+  const events = dedupeCursorTranscriptEstimates([...byIdentity.values()]);
+  return {
+    events,
+    summary: {
+      source: adapter.source,
+      available: events.length > 0,
+      detected: selected.detected,
+      paths: placements.map((placement) => placement.root),
+      filesConsidered: selected.files.length,
+      filesRead,
+      filesReused,
+      filesParsed,
+      malformedLines,
+      events: events.length,
+      diagnostics,
+    },
+    cacheEntries,
   };
 }
 
@@ -6124,7 +6477,6 @@ export async function scanLocalUsage(
       | "grok-turn-v1"
       | "openclaw-session-v1"
       | "antigravity-transcript-v1"
-      | "cursor-transcript-v1"
       | "dsh-session-v1"
       | "pi-session-v1"
       | "omp-session-v1",
@@ -6221,10 +6573,20 @@ export async function scanLocalUsage(
       parseAntigravityUsageFile,
       "unique",
     ).catch((error) => sourceFailure("antigravity", error)),
-    structuredReader(
-      "cursor-transcript-v1",
-      parseCursorTranscriptUsageFile,
-      "unique",
+    scanCursorUsageAdapter(
+      BUILTIN_USAGE_ADAPTERS.find(
+        (candidate) => candidate.reader === "cursor-usage-v1",
+      )!,
+      osFromProcess(platform),
+      homeDirectory,
+      cutoffTime,
+      nowTime,
+      maxFiles,
+      cachedFiles,
+      options.signal,
+      options.toolDataRoots,
+      maxSqliteRows,
+      lookbackDays,
     ).catch((error) => sourceFailure("cursor", error)),
     structuredReader("pi-session-v1", parsePiUsageFile, "unique").catch(
       (error) => sourceFailure("pi", error),

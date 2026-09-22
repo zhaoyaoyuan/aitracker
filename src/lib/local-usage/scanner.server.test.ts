@@ -184,6 +184,146 @@ test("Cursor estimates recent transcript tokens when modern logs omit provider u
   }
 });
 
+test("Cursor reports real composer tokens and drops the matching transcript estimate", async () => {
+  const root = join(
+    tmpdir(),
+    `aitracker-cursor-composer-${process.pid}-${Date.now()}`,
+  );
+  const homeDirectory = join(root, "home");
+  const databasePath = join(
+    homeDirectory,
+    "Library",
+    "Application Support",
+    "Cursor",
+    "User",
+    "globalStorage",
+    "state.vscdb",
+  );
+  await mkdir(dirname(databasePath), { recursive: true });
+  const database = new DatabaseSync(databasePath);
+  database.exec("CREATE TABLE cursorDiskKV (key TEXT UNIQUE, value BLOB)");
+  const insert = database.prepare(
+    "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+  );
+  const composerTimestamp = Date.parse("2026-07-27T10:30:00.000Z");
+  insert.run(
+    "composerData:composer-reported-one",
+    JSON.stringify({
+      composerId: "composer-reported-one",
+      lastUpdatedAt: composerTimestamp,
+      promptTokenBreakdown: { totalUsedTokens: 182071, maxTokens: 256000 },
+      workspaceIdentifier: { uri: { fsPath: "/tmp/demo-workspace" } },
+      // Conversation bodies must never survive the scan.
+      conversation: [{ text: "PRIVATE COMPOSER CONVERSATION" }],
+    }),
+  );
+  insert.run(
+    "composerData:composer-no-tokens",
+    JSON.stringify({
+      composerId: "composer-no-tokens",
+      lastUpdatedAt: composerTimestamp,
+    }),
+  );
+  database.close();
+
+  // A transcript whose mtime lands within the match tolerance of the
+  // composer's timestamp describes the same session; its estimate must be
+  // dropped in favour of the tool-reported figure.
+  const transcriptDirectory = join(
+    homeDirectory,
+    ".cursor",
+    "projects",
+    "Users-demo-workspace",
+    "agent-transcripts",
+    "cursor-matched-session",
+  );
+  await mkdir(transcriptDirectory, { recursive: true });
+  const transcriptPath = join(
+    transcriptDirectory,
+    "cursor-matched-session.jsonl",
+  );
+  await writeFile(
+    transcriptPath,
+    [
+      JSON.stringify({
+        role: "user",
+        message: { content: [{ type: "text", text: "PRIVATE PROMPT" }] },
+      }),
+      JSON.stringify({
+        role: "assistant",
+        message: { content: [{ type: "text", text: "PRIVATE RESPONSE" }] },
+      }),
+    ].join("\n") + "\n",
+  );
+  const matchedTimestamp = new Date(composerTimestamp + 60 * 1000);
+  await utimes(transcriptPath, matchedTimestamp, matchedTimestamp);
+
+  // A second transcript far from any composer keeps its labelled estimate.
+  const oldTranscriptDirectory = join(
+    homeDirectory,
+    ".cursor",
+    "projects",
+    "Users-demo-workspace",
+    "agent-transcripts",
+    "cursor-orphan-session",
+  );
+  await mkdir(oldTranscriptDirectory, { recursive: true });
+  const oldTranscriptPath = join(
+    oldTranscriptDirectory,
+    "cursor-orphan-session.jsonl",
+  );
+  await writeFile(
+    oldTranscriptPath,
+    [
+      JSON.stringify({
+        role: "user",
+        message: { content: [{ type: "text", text: "PRIVATE PROMPT" }] },
+      }),
+      JSON.stringify({
+        role: "assistant",
+        message: { content: [{ type: "text", text: "PRIVATE RESPONSE" }] },
+      }),
+    ].join("\n") + "\n",
+  );
+  const orphanTimestamp = new Date("2026-07-27T09:00:00.000Z");
+  await utimes(oldTranscriptPath, orphanTimestamp, orphanTimestamp);
+
+  try {
+    const snapshot = await scanLocalUsage({
+      homeDirectory,
+      cacheDirectory: join(root, "cache"),
+      now: NOW,
+      platform: "darwin",
+      disablePersistentCache: true,
+    });
+    const events = snapshot.details.filter(
+      (candidate) => candidate.source === "cursor",
+    );
+    const reported = events.find(
+      (candidate) => candidate.measurement === "reported",
+    );
+    assert.ok(reported, "composer event missing");
+    assert.equal(reported.inputTokens, 182071);
+    assert.equal(reported.totalTokens, 182071);
+    assert.equal(reported.outputTokens, 0);
+    assert.equal(reported.model, "cursor-composer");
+    assert.equal(reported.timestamp, new Date(composerTimestamp).toISOString());
+    assert.equal(reported.project, "/tmp/demo-workspace");
+    // The matched estimate is gone, the orphan estimate survives.
+    const estimates = events.filter(
+      (candidate) => candidate.measurement === "estimated",
+    );
+    assert.equal(estimates.length, 1);
+    assert.equal(estimates[0]!.timestamp, orphanTimestamp.toISOString());
+    assert.doesNotMatch(
+      JSON.stringify(snapshot),
+      /PRIVATE COMPOSER CONVERSATION|PRIVATE PROMPT|PRIVATE RESPONSE/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("generic usage adapters scan only paths for the active platform", async () => {
   const root = join(
     tmpdir(),

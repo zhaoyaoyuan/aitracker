@@ -195,12 +195,23 @@ test("baseline usage adapters remain represented (native sources included)", () 
     }));
     if (expected.source === "cursor") {
       // Expected diff (Cursor transcript support): the legacy usage glob is
-      // replaced by the native transcript source in ~/.cursor/projects.
+      // replaced by the native transcript source in ~/.cursor/projects plus
+      // the IDE composer database (tool-reported context figures).
       assert.deepEqual(actualPaths, [
         {
           root: ".cursor/projects",
           glob: "*/agent-transcripts/*/*.jsonl",
           format: "jsonl",
+        },
+        {
+          root: "Library/Application Support/Cursor/User/globalStorage",
+          glob: "state.vscdb",
+          format: "sqlite",
+        },
+        {
+          root: "AppData/Roaming/Cursor/User/globalStorage",
+          glob: "state.vscdb",
+          format: "sqlite",
         },
       ]);
     } else if (expected.source === "gemini-cli") {

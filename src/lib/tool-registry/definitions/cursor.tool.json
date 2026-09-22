@@ -65,7 +65,7 @@
   "capabilities": {
     "usage": {
       "mode": "native",
-      "reader": "cursor-transcript-v1",
+      "reader": "cursor-usage-v1",
       "maxFileSizeBytes": 67108864,
       "paths": [
         {
@@ -74,6 +74,20 @@
           "path": ".cursor/projects",
           "glob": "*/agent-transcripts/*/*.jsonl",
           "format": "jsonl"
+        },
+        {
+          "targets": ["macos"],
+          "base": "appData",
+          "path": "Cursor/User/globalStorage",
+          "glob": "state.vscdb",
+          "format": "sqlite"
+        },
+        {
+          "targets": ["windows10", "windows11"],
+          "base": "appDataRoaming",
+          "path": "Cursor/User/globalStorage",
+          "glob": "state.vscdb",
+          "format": "sqlite"
         }
       ]
     },

@@ -267,6 +267,19 @@ export const BASELINE_USAGE_ADAPTERS: readonly BaselineUsageAdapter[] = [
         glob: "*/agent-transcripts/*/*.jsonl",
         format: "jsonl",
       },
+      // Expected diff (Cursor composer usage support): the IDE composer
+      // store contributes a tool-reported cumulative context figure per
+      // session, read from state.vscdb (sqlite, per-platform app-data).
+      {
+        root: "Library/Application Support/Cursor/User/globalStorage",
+        glob: "state.vscdb",
+        format: "sqlite",
+      },
+      {
+        root: "AppData/Roaming/Cursor/User/globalStorage",
+        glob: "state.vscdb",
+        format: "sqlite",
+      },
     ],
     customMapping: false,
     hasSqliteQuery: false,

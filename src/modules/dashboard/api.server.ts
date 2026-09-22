@@ -465,6 +465,18 @@ function sourceEvidence(event: DashboardUsageEvent) {
       systemPromptTokens: false,
     };
   }
+  if (event.source === "cursor" && event.measurement === "reported") {
+    // Cursor's composer breakdown is a real context figure whose categories
+    // include system prompt, tool definitions, rules and skills.
+    return {
+      textResponses: true,
+      toolCalls: true,
+      skillCalls: true,
+      toolOutputCalls: false,
+      reasoningTokens: false,
+      systemPromptTokens: true,
+    };
+  }
   return {
     textResponses: event.context?.textResponse !== undefined,
     toolCalls: event.context?.tools !== undefined,

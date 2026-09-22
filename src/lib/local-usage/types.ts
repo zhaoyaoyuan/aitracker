@@ -130,7 +130,17 @@ export interface LocalUsageContext {
  * documented local estimate. Estimated values are kept separate from context
  * attribution: a transcript-size estimate cannot prove where tokens went.
  */
-export type LocalUsageMeasurement = "observed" | "estimated";
+/**
+ * How the token counts of an event were established:
+ * - `observed`: native per-message usage fields written by the tool itself.
+ * - `estimated`: locally derived (character heuristics) when a tool writes no
+ *   usage fields; always labelled, never mixed into observed totals.
+ * - `reported`: a tool-authored aggregate (Cursor's composer
+ *   `promptTokenBreakdown.totalUsedTokens`) that is real but coarse — one
+ *   cumulative context figure per session rather than per-message billing.
+ *   Counted with observed totals, displayed with its own label.
+ */
+export type LocalUsageMeasurement = "observed" | "estimated" | "reported";
 
 export interface LocalUsageEvent extends LocalTokenCounts {
   source: LocalUsageSource;

@@ -26,7 +26,7 @@ export const BUILTIN_USAGE_READERS: ReadonlySet<string> = new Set([
   "generic-sqlite",
   "claude-rollout-v1",
   "codex-rollout-v1",
-  "cursor-transcript-v1",
+  "cursor-usage-v1",
   "every-code-rollout-v1",
   "gemini-session-v1",
   "grok-turn-v1",
@@ -50,6 +50,22 @@ export const BUILTIN_USAGE_READERS: ReadonlySet<string> = new Set([
  * reader is registered in both places at once.
  */
 export const SQLITE_CAPABLE_USAGE_READERS: ReadonlySet<string> = new Set([
+  "generic-sqlite",
+  "zed-threads-v1",
+  // Cursor reads one sqlite database (the IDE composer store) alongside its
+  // agent-transcript JSONL files with the same reader. The bespoke scanner
+  // applies the sqlite protections itself: the row budget and WAL-aware
+  // caching on the database, the whole-file byte cap on the JSONL logs.
+  "cursor-usage-v1",
+]);
+
+/**
+ * Readers whose paths must ALL be sqlite (used to catch a sqlite-capable
+ * reader accidentally pointed at a buffered file). Mixed-format readers like
+ * cursor-usage-v1 are deliberately absent: they own both shapes and enforce
+ * the matching protection per path.
+ */
+export const SQLITE_ONLY_USAGE_READERS: ReadonlySet<string> = new Set([
   "generic-sqlite",
   "zed-threads-v1",
 ]);
@@ -284,7 +300,7 @@ export function validateToolDefinitions(
             }
           } else if (
             usage.reader !== undefined &&
-            SQLITE_CAPABLE_USAGE_READERS.has(usage.reader)
+            SQLITE_ONLY_USAGE_READERS.has(usage.reader)
           ) {
             diag(
               id,

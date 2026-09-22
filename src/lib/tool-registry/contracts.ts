@@ -69,7 +69,7 @@ export type UsageReaderKey =
   | "generic-sqlite"
   | "claude-rollout-v1"
   | "codex-rollout-v1"
-  | "cursor-transcript-v1"
+  | "cursor-usage-v1"
   | "every-code-rollout-v1"
   | "gemini-session-v1"
   | "grok-turn-v1"

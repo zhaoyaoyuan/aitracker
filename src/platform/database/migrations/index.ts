@@ -2,10 +2,12 @@
 import { INITIAL_SCHEMA_SQL } from "./0001_initial_schema.ts";
 import { DROP_LEGACY_USAGE_TABLES_SQL } from "./0002_drop_legacy_usage_tables.ts";
 import { TOOL_DATA_ROOTS_SQL } from "./0003_tool_data_roots.ts";
+import { WIDEN_USAGE_MEASUREMENT_SQL } from "./0004_widen_usage_measurement.ts";
 
 export { INITIAL_SCHEMA_SQL } from "./0001_initial_schema.ts";
 export { DROP_LEGACY_USAGE_TABLES_SQL } from "./0002_drop_legacy_usage_tables.ts";
 export { TOOL_DATA_ROOTS_SQL } from "./0003_tool_data_roots.ts";
+export { WIDEN_USAGE_MEASUREMENT_SQL } from "./0004_widen_usage_measurement.ts";
 
 export interface MigrationDefinition {
   readonly version: number;
@@ -35,6 +37,11 @@ export const MIGRATIONS: readonly MigrationDefinition[] = [
     name: "0003_tool_data_roots",
     sql: TOOL_DATA_ROOTS_SQL,
   },
+  {
+    version: 4,
+    name: "0004_widen_usage_measurement",
+    sql: WIDEN_USAGE_MEASUREMENT_SQL,
+  },
 ];
 
-export const LATEST_MIGRATION_VERSION = 3;
+export const LATEST_MIGRATION_VERSION = 4;

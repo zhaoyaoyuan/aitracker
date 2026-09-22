@@ -90,9 +90,16 @@ test("every sqlite usage query opens newest-first and prepares", () => {
       tool.capabilities.usage.mode !== "unsupported" &&
       tool.capabilities.usage.paths?.some((path) => path.format === "sqlite"),
   );
-  // Zed is the native `zed-threads-v1` reader: its SQL lives in the scanner.
-  const native = sqliteTools.filter((tool) => tool.id === "zed");
-  const definitions = sqliteTools.filter((tool) => tool.id !== "zed");
+  // Zed and cursor are native readers: their SQL lives in the scanner. Both
+  // apply the row budget (and zed the window pushdown) inside their own
+  // prepared statements; cursor bounds its composer rows with the shared
+  // budget plus a TypeScript-side cutoff (see the window contract below).
+  const native = sqliteTools.filter(
+    (tool) => tool.id === "zed" || tool.id === "cursor",
+  );
+  const definitions = sqliteTools.filter(
+    (tool) => tool.id !== "zed" && tool.id !== "cursor",
+  );
   assert.ok(
     definitions.length >= 8,
     `expected the generic sqlite adapters, saw ${definitions.length}`,
@@ -102,7 +109,12 @@ test("every sqlite usage query opens newest-first and prepares", () => {
   // single place the byte cap was lifted and the row budget applied. A sqlite
   // tool that arrives on a different reader would silently skip both.
   for (const tool of [...definitions, ...native]) {
-    const expected = tool.id === "zed" ? "zed-threads-v1" : "generic-sqlite";
+    const expected =
+      tool.id === "zed"
+        ? "zed-threads-v1"
+        : tool.id === "cursor"
+          ? "cursor-usage-v1"
+          : "generic-sqlite";
     assert.equal(
       tool.capabilities.usage.reader,
       expected,
@@ -164,8 +176,13 @@ test("every sqlite adapter pushes the scan window into its query", () => {
     (tool) =>
       tool.capabilities.usage.mode !== "unsupported" &&
       tool.capabilities.usage.paths?.some((path) => path.format === "sqlite") &&
-      // The native reader builds its own SQL in the scanner, window included.
-      tool.capabilities.usage.reader !== "zed-threads-v1",
+      // The native readers build their own SQL in the scanner, window
+      // included: zed streams threads by updated_at, and cursor bounds its
+      // composer rows with the shared row budget plus a TypeScript-side
+      // cutoff (lastUpdatedAt lives inside the JSON value, so there is no
+      // column to push a filter into).
+      tool.capabilities.usage.reader !== "zed-threads-v1" &&
+      tool.capabilities.usage.reader !== "cursor-usage-v1",
   );
   assert.ok(definitions.length >= 8);
 

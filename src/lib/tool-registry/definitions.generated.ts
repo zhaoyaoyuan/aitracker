@@ -304,7 +304,7 @@ export const RAW_TOOL_DEFINITIONS: readonly RawToolDefinition[] = [
     "capabilities": {
       "usage": {
         "mode": "native",
-        "reader": "cursor-transcript-v1",
+        "reader": "cursor-usage-v1",
         "paths": [
           {
             "targets": [
@@ -317,6 +317,25 @@ export const RAW_TOOL_DEFINITIONS: readonly RawToolDefinition[] = [
             "path": ".cursor/projects",
             "glob": "*/agent-transcripts/*/*.jsonl",
             "format": "jsonl"
+          },
+          {
+            "targets": [
+              "macos"
+            ],
+            "base": "appData",
+            "path": "Cursor/User/globalStorage",
+            "glob": "state.vscdb",
+            "format": "sqlite"
+          },
+          {
+            "targets": [
+              "windows10",
+              "windows11"
+            ],
+            "base": "appDataRoaming",
+            "path": "Cursor/User/globalStorage",
+            "glob": "state.vscdb",
+            "format": "sqlite"
           }
         ],
         "maxFileSizeBytes": 67108864
@@ -4183,4 +4202,4 @@ export const SHARED_POLICY_PACKS: SharedPolicyPacks = {
   }
 };
 
-export const TOOL_REGISTRY_VERSION: string = "e4e9913c25149aba";
+export const TOOL_REGISTRY_VERSION: string = "573e1a76aa124dfa";
