@@ -2786,7 +2786,10 @@ function parseCursorComposerDb(
         stringValue(uri?.path) ??
         stringValue(value.project) ??
         "unknown";
-      const sessionId = sessionIdFromStructuredValue(adapter.source, composerId);
+      const sessionId = sessionIdFromStructuredValue(
+        adapter.source,
+        composerId,
+      );
       if (sessionId == null) continue;
       events.push({
         source: adapter.source as LocalUsageSource,
@@ -2823,7 +2826,13 @@ function parseCursorComposerDb(
         ),
       );
     }
-    return { events, identities, malformedLines, truncated: exceeded, diagnostics };
+    return {
+      events,
+      identities,
+      malformedLines,
+      truncated: exceeded,
+      diagnostics,
+    };
   } catch {
     return {
       events: [],
@@ -2919,8 +2928,7 @@ async function scanCursorUsageAdapter(
   for (const file of selected.files) {
     signal?.throwIfAborted();
     const cached = cachedFiles.get(file.path) as
-      | PersistentGenericFileEntry
-      | undefined;
+      PersistentGenericFileEntry | undefined;
     const isSqlite = file.format === "sqlite";
     const budgetIdentity = cached?.sqliteBudget;
     const charge = cached?.events.length;
