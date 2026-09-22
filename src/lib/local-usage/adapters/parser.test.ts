@@ -13,7 +13,6 @@ const CASES: Array<{
   file: string;
   format: "json" | "jsonl";
 }> = [
-  { source: "cursor", file: "cursor.json", format: "json" },
   { source: "kimi-code", file: "kimi-code.jsonl", format: "jsonl" },
   { source: "opencode", file: "opencode.json", format: "json" },
   { source: "github-copilot", file: "github-copilot.jsonl", format: "jsonl" },

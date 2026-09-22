@@ -277,6 +277,16 @@ export const RAW_TOOL_DEFINITIONS: readonly RawToolDefinition[] = [
       }
     },
     "storage": {
+      "dataRoots": [
+        {
+          "base": "appData",
+          "path": "Cursor"
+        },
+        {
+          "base": "appDataRoaming",
+          "path": "Cursor"
+        }
+      ],
       "skills": {
         "rootSpecs": [
           {
@@ -293,28 +303,9 @@ export const RAW_TOOL_DEFINITIONS: readonly RawToolDefinition[] = [
     },
     "capabilities": {
       "usage": {
-        "mode": "adapter",
-        "reader": "generic",
+        "mode": "native",
+        "reader": "cursor-transcript-v1",
         "paths": [
-          {
-            "targets": [
-              "macos"
-            ],
-            "base": "appData",
-            "path": "Cursor/User/globalStorage",
-            "glob": "**/*usage*.json",
-            "format": "json"
-          },
-          {
-            "targets": [
-              "windows10",
-              "windows11"
-            ],
-            "base": "appDataRoaming",
-            "path": "Cursor/User/globalStorage",
-            "glob": "**/*usage*.json",
-            "format": "json"
-          },
           {
             "targets": [
               "macos",
@@ -323,26 +314,18 @@ export const RAW_TOOL_DEFINITIONS: readonly RawToolDefinition[] = [
               "linux"
             ],
             "base": "home",
-            "path": ".cursor",
-            "glob": "**/*usage*.jsonl",
+            "path": ".cursor/projects",
+            "glob": "*/agent-transcripts/*/*.jsonl",
             "format": "jsonl"
-          },
-          {
-            "targets": [
-              "macos",
-              "linux"
-            ],
-            "base": "configHome",
-            "path": "tokscale/cursor-cache",
-            "glob": "**/*.json",
-            "format": "json"
           }
-        ]
+        ],
+        "maxFileSizeBytes": 67108864
       },
       "skills": "read-write",
       "agents": "unsupported",
       "sessions": {
-        "mode": "unsupported"
+        "mode": "read",
+        "reader": "cursor-session-v1"
       },
       "market": "install-target",
       "security": "unsupported"
@@ -4200,4 +4183,4 @@ export const SHARED_POLICY_PACKS: SharedPolicyPacks = {
   }
 };
 
-export const TOOL_REGISTRY_VERSION: string = "596879398bf2baa7";
+export const TOOL_REGISTRY_VERSION: string = "e4e9913c25149aba";

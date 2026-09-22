@@ -69,6 +69,7 @@ export type UsageReaderKey =
   | "generic-sqlite"
   | "claude-rollout-v1"
   | "codex-rollout-v1"
+  | "cursor-transcript-v1"
   | "every-code-rollout-v1"
   | "gemini-session-v1"
   | "grok-turn-v1"
@@ -86,6 +87,7 @@ export type UsageReaderKey =
 export type SessionReaderKey =
   | "claude-session-v1"
   | "codex-session-v1"
+  | "cursor-session-v1"
   | "grok-session-v1"
   | "dsh-session-v1"
   | "aipy-session-v1"

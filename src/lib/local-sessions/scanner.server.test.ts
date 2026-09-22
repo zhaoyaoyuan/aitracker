@@ -73,6 +73,115 @@ test("resume-safe ids: rejects shell metacharacters and command injection", () =
   assert.equal(isResumeSafeId(""), false);
 });
 
+test("Cursor: reads Composer headers as private read-only sessions", async () => {
+  await withTempHome(async (home) => {
+    const databasePath = join(
+      home,
+      "Library",
+      "Application Support",
+      "Cursor",
+      "User",
+      "globalStorage",
+      "state.vscdb",
+    );
+    await mkdir(dirname(databasePath), { recursive: true });
+    const database = new DatabaseSync(databasePath);
+    database.exec(`
+      CREATE TABLE composerHeaders (
+        composerId TEXT PRIMARY KEY,
+        workspaceId TEXT,
+        createdAt INTEGER,
+        lastUpdatedAt INTEGER,
+        isArchived INTEGER,
+        isSubagent INTEGER,
+        recency INTEGER,
+        checkpointAt INTEGER,
+        value TEXT,
+        subagentTypeName TEXT
+      )
+    `);
+    const insert = database.prepare(`
+      INSERT INTO composerHeaders (
+        composerId, workspaceId, createdAt, lastUpdatedAt,
+        isArchived, isSubagent, recency, checkpointAt, value, subagentTypeName
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    insert.run(
+      "cursor-main-session",
+      "workspace-one",
+      Date.parse("2026-08-01T09:00:00.000Z"),
+      Date.parse("2026-08-01T09:05:00.000Z"),
+      0,
+      0,
+      2,
+      0,
+      JSON.stringify({
+        composerId: "cursor-main-session",
+        name: "Fix Cursor session discovery",
+        workspaceIdentifier: {
+          uri: { fsPath: "/Users/demo/cursor-project" },
+        },
+        conversation: [
+          { type: 1, text: "PRIVATE USER PROMPT" },
+          { type: 2, text: "PRIVATE ASSISTANT RESPONSE" },
+        ],
+      }),
+      null,
+    );
+    insert.run(
+      "cursor-archived-session",
+      "workspace-two",
+      Date.parse("2026-07-31T09:00:00.000Z"),
+      Date.parse("2026-07-31T09:01:00.000Z"),
+      1,
+      0,
+      1,
+      0,
+      JSON.stringify({ name: "Archived Composer" }),
+      null,
+    );
+    insert.run(
+      "cursor-internal-subagent",
+      "workspace-one",
+      Date.parse("2026-08-01T09:02:00.000Z"),
+      Date.parse("2026-08-01T09:03:00.000Z"),
+      0,
+      1,
+      3,
+      0,
+      JSON.stringify({ name: "Internal worker" }),
+      "worker",
+    );
+    database.close();
+
+    const summary = await scanLocalSessions({
+      homeDirectory: home,
+      now: NOW,
+      platform: "darwin",
+    });
+    assert.equal(summary.sessions.length, 2);
+    const session = summary.sessions.find(
+      (item) => item.sessionId === "cursor-main-session",
+    );
+    assert.ok(session);
+    assert.equal(session.source, "cursor");
+    assert.equal(session.title, "Fix Cursor session discovery");
+    assert.equal(session.projectKey, "cursor-project");
+    assert.equal(session.projectRef, "/Users/demo/cursor-project");
+    assert.equal(session.startedAt, "2026-08-01T09:00:00.000Z");
+    assert.equal(session.endedAt, "2026-08-01T09:05:00.000Z");
+    assert.equal(session.resumeSafe, false);
+    assert.equal(session.resumeCommand, null);
+    assert.equal(session.turns, 0);
+    assert.equal(session.totals.totalTokens, 0);
+    assertPrivacyClean(session);
+    assert.equal(
+      JSON.stringify(session).includes("PRIVATE USER PROMPT"),
+      false,
+    );
+  });
+});
+
 test("Claude Code: parses one session with ai-title + usage, excludes journal.jsonl", async () => {
   await withTempHome(async (home) => {
     const projectDir = join(

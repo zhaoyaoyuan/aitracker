@@ -5,11 +5,13 @@ import {
   readFile,
   rm,
   unlink,
+  utimes,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
 import { APP_DATA_DIR } from "../app-config";
 
 import { scanLocalUsage } from "./scanner.server.ts";
@@ -41,6 +43,142 @@ test("Windows reuses an injected empty WSL topology without enumerating again", 
       },
     });
     assert.equal(enumerations, 0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("Cursor ignores legacy bubble token storage after modern transcripts became authoritative", async () => {
+  const root = join(
+    tmpdir(),
+    `aitracker-cursor-usage-${process.pid}-${Date.now()}`,
+  );
+  const homeDirectory = join(root, "home");
+  const databasePath = join(
+    homeDirectory,
+    "Library",
+    "Application Support",
+    "Cursor",
+    "User",
+    "globalStorage",
+    "state.vscdb",
+  );
+  await mkdir(dirname(databasePath), { recursive: true });
+  const database = new DatabaseSync(databasePath);
+  database.exec("CREATE TABLE cursorDiskKV (key TEXT UNIQUE, value BLOB)");
+  const insert = database.prepare(
+    "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+  );
+  insert.run(
+    "bubbleId:cursor-bubble-one",
+    JSON.stringify({
+      bubbleId: "cursor-bubble-one",
+      createdAt: "2026-07-27T10:00:00.000Z",
+      text: "PRIVATE CURSOR RESPONSE",
+      modelInfo: { modelName: "claude-4.5-sonnet" },
+      tokenCount: { inputTokens: 120, outputTokens: 30 },
+    }),
+  );
+  insert.run(
+    "bubbleId:cursor-zero-token",
+    JSON.stringify({
+      createdAt: "2026-07-27T11:00:00.000Z",
+      tokenCount: { inputTokens: 0, outputTokens: 0 },
+    }),
+  );
+  database.close();
+
+  try {
+    const snapshot = await scanLocalUsage({
+      homeDirectory,
+      cacheDirectory: join(root, "cache"),
+      now: NOW,
+      platform: "darwin",
+      disablePersistentCache: true,
+    });
+    const events = snapshot.details.filter(
+      (event) => event.source === "cursor",
+    );
+    assert.equal(events.length, 0);
+    assert.equal(snapshot.daily.at(-1)?.bySource.cursor, undefined);
+    assert.equal(
+      JSON.stringify(snapshot).includes("PRIVATE CURSOR RESPONSE"),
+      false,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("Cursor estimates recent transcript tokens when modern logs omit provider usage", async () => {
+  const root = join(
+    tmpdir(),
+    `aitracker-cursor-transcript-${process.pid}-${Date.now()}`,
+  );
+  const homeDirectory = join(root, "home");
+  const transcriptDirectory = join(
+    homeDirectory,
+    ".cursor",
+    "projects",
+    "Users-demo-modern-project",
+    "agent-transcripts",
+    "cursor-modern-session",
+  );
+  const transcriptPath = join(
+    transcriptDirectory,
+    "cursor-modern-session.jsonl",
+  );
+  await mkdir(transcriptDirectory, { recursive: true });
+  await writeFile(
+    transcriptPath,
+    [
+      JSON.stringify({
+        role: "user",
+        message: {
+          content: [{ type: "text", text: "PRIVATE MODERN CURSOR PROMPT" }],
+        },
+      }),
+      JSON.stringify({
+        role: "assistant",
+        message: {
+          content: [
+            { type: "text", text: "PRIVATE MODERN CURSOR RESPONSE" },
+            {
+              type: "tool_use",
+              name: "PRIVATE_TOOL",
+              input: { command: "PRIVATE_COMMAND" },
+            },
+          ],
+        },
+      }),
+      JSON.stringify({ type: "turn_ended", status: "success" }),
+    ].join("\n") + "\n",
+  );
+  const timestamp = new Date("2026-07-27T11:00:00.000Z");
+  await utimes(transcriptPath, timestamp, timestamp);
+
+  try {
+    const snapshot = await scanLocalUsage({
+      homeDirectory,
+      cacheDirectory: join(root, "cache"),
+      now: NOW,
+      platform: "darwin",
+      disablePersistentCache: true,
+    });
+    const event = snapshot.details.find(
+      (candidate) =>
+        candidate.source === "cursor" && candidate.measurement === "estimated",
+    );
+    assert.ok(event);
+    assert.equal(event.timestamp, timestamp.toISOString());
+    assert.ok(event.inputTokens > 0);
+    assert.ok(event.outputTokens > 0);
+    assert.equal(event.model, "cursor-unknown");
+    assert.match(event.sessionId ?? "", /^session_[a-f0-9]{20}$/);
+    assert.doesNotMatch(
+      JSON.stringify(snapshot),
+      /PRIVATE MODERN|PRIVATE_TOOL|PRIVATE_COMMAND/,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

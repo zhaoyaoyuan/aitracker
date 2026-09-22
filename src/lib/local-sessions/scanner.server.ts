@@ -2506,6 +2506,94 @@ registerSessionReader({
   scan: scanCodexSessions,
   defaultRoots: [".codex"],
 });
+
+// Cursor — <appData>/Cursor/User/globalStorage/state.vscdb
+//
+// Current Cursor versions keep the privacy-safe session list projection in
+// `composerHeaders`. The much larger `cursorDiskKV.composerData:*` values hold
+// full conversation bodies and are deliberately never read here. Cursor does
+// not expose a stable local resume command, so these records are read-only.
+async function scanCursorSessions(
+  cursorDirectory: string,
+  signal?: AbortSignal,
+): Promise<SessionRecord[]> {
+  signal?.throwIfAborted();
+  const databasePath = join(
+    cursorDirectory,
+    "User",
+    "globalStorage",
+    "state.vscdb",
+  );
+  let database: DatabaseSync | undefined;
+  try {
+    const info = await stat(databasePath);
+    if (!info.isFile()) return [];
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const rows = database
+      .prepare(
+        `SELECT composerId, workspaceId, createdAt, lastUpdatedAt, value
+         FROM composerHeaders
+         WHERE COALESCE(isSubagent, 0) = 0
+         ORDER BY COALESCE(lastUpdatedAt, createdAt, 0) DESC
+         LIMIT ?`,
+      )
+      .all(MAX_FILES_PER_SOURCE) as Array<{
+      composerId?: unknown;
+      workspaceId?: unknown;
+      createdAt?: unknown;
+      lastUpdatedAt?: unknown;
+      value?: unknown;
+    }>;
+    const records: SessionRecord[] = [];
+    for (const row of rows) {
+      signal?.throwIfAborted();
+      const sessionId = stringValue(row.composerId);
+      if (sessionId == null) continue;
+      let header: JsonObject | undefined;
+      if (typeof row.value === "string" && row.value.length <= MAX_FILE_BYTES) {
+        try {
+          header = asObject(JSON.parse(row.value));
+        } catch {
+          // A torn or future-version header still has useful SQL metadata.
+        }
+      }
+      const workspace = asObject(header?.workspaceIdentifier);
+      const uri = asObject(workspace?.uri);
+      const projectRef =
+        stringValue(uri?.fsPath) ??
+        stringValue(uri?.path) ??
+        stringValue(row.workspaceId) ??
+        null;
+      const createdAt = parseTimestampValue(row.createdAt ?? header?.createdAt);
+      const updatedAt = parseTimestampValue(
+        row.lastUpdatedAt ?? header?.lastUpdatedAt,
+      );
+      const fragment = createEmptyFragment("cursor", sessionId);
+      fragment.resumeSupported = false;
+      fragment.title =
+        stringValue(header?.name) ?? stringValue(header?.subtitle) ?? "";
+      fragment.projectRef = projectRef;
+      if (createdAt != null) fragment.timestamps.push(createdAt);
+      if (updatedAt != null && updatedAt.ms !== createdAt?.ms) {
+        fragment.timestamps.push(updatedAt);
+      }
+      records.push(await fragmentToRecord(fragment));
+    }
+    return records;
+  } catch {
+    // Missing tables, locked/corrupt databases and older Cursor schemas are
+    // empty sources rather than failures of the whole multi-tool refresh.
+    return [];
+  } finally {
+    database?.close();
+  }
+}
+
+registerSessionReader({
+  key: "cursor-session-v1",
+  scan: scanCursorSessions,
+  defaultRoots: ["Library/Application Support/Cursor"],
+});
 registerSessionReader({
   key: "grok-session-v1",
   scan: scanGrokSessions,

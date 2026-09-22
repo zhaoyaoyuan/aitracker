@@ -2622,6 +2622,81 @@ async function parseOpenclawUsageFile(
   };
 }
 
+async function parseCursorTranscriptUsageFile(
+  file: FileCandidate & { format: UsageAdapterPath["format"] },
+  fallbackSessionId: string,
+  signal?: AbortSignal,
+): Promise<{
+  identifiedEvents: CachedIdentifiedEvent[];
+  malformedLines: number;
+  diagnostics: LocalUsageDiagnostic[];
+}> {
+  let inputTokens = 0;
+  let outputTokens = 0;
+  const { malformedLines, oversized } = await readJsonLines(
+    file.path,
+    (record) => {
+      const role = stringValue(record.role);
+      const message = asObject(record.message);
+      if (role === "user") {
+        inputTokens += estimateAntigravityTokens(message?.content);
+      } else if (role === "assistant") {
+        outputTokens += estimateAntigravityTokens(message?.content);
+      }
+    },
+    signal,
+  );
+  const totalTokens = inputTokens + outputTokens;
+  const timestamp = new Date(file.modifiedAt);
+  const projectDirectory = relative(homedir(), file.path)
+    .split(sep)
+    .find((part, index, parts) => parts[index - 1] === "projects");
+  const event: LocalUsageEvent | undefined =
+    !oversized && totalTokens > 0 && !Number.isNaN(timestamp.getTime())
+      ? {
+          source: "cursor",
+          timestamp: timestamp.toISOString(),
+          sessionId: fallbackSessionId,
+          model: "cursor-unknown",
+          project: projectDirectory ?? "unknown",
+          inputTokens,
+          cachedInputTokens: 0,
+          cacheCreationInputTokens: 0,
+          outputTokens,
+          reasoningOutputTokens: 0,
+          totalTokens,
+          measurement: "estimated",
+        }
+      : undefined;
+  return {
+    identifiedEvents:
+      event == null
+        ? []
+        : [
+            {
+              identity: privacyFingerprint("cursor", [
+                fallbackSessionId,
+                file.modifiedAt,
+                totalTokens,
+              ]),
+              event,
+            },
+          ],
+    malformedLines,
+    diagnostics: oversized
+      ? [
+          {
+            source: "cursor",
+            code: "file-too-large",
+            path: file.path,
+            count: 1,
+            message: `日志超过 ${MAX_JSONL_FILE_BYTES} 字节读取上限，已跳过。`,
+          },
+        ]
+      : [],
+  };
+}
+
 /** Legacy-compatible local estimate: CJK chars count one each, other text one per four chars. */
 function estimateAntigravityTokens(value: unknown): number {
   const text =
@@ -6049,6 +6124,7 @@ export async function scanLocalUsage(
       | "grok-turn-v1"
       | "openclaw-session-v1"
       | "antigravity-transcript-v1"
+      | "cursor-transcript-v1"
       | "dsh-session-v1"
       | "pi-session-v1"
       | "omp-session-v1",
@@ -6084,6 +6160,7 @@ export async function scanLocalUsage(
     grok,
     openclaw,
     antigravity,
+    cursorTranscript,
     dsh,
     pi,
     omp,
@@ -6144,6 +6221,11 @@ export async function scanLocalUsage(
       parseAntigravityUsageFile,
       "unique",
     ).catch((error) => sourceFailure("antigravity", error)),
+    structuredReader(
+      "cursor-transcript-v1",
+      parseCursorTranscriptUsageFile,
+      "unique",
+    ).catch((error) => sourceFailure("cursor", error)),
     structuredReader("pi-session-v1", parsePiUsageFile, "unique").catch(
       (error) => sourceFailure("pi", error),
     ),
@@ -6242,6 +6324,7 @@ export async function scanLocalUsage(
     ...grok.cacheEntries,
     ...openclaw.cacheEntries,
     ...antigravity.cacheEntries,
+    ...cursorTranscript.cacheEntries,
     ...dsh.cacheEntries,
     ...pi.cacheEntries,
     ...omp.cacheEntries,
@@ -6262,6 +6345,7 @@ export async function scanLocalUsage(
       grok.summary.filesParsed > 0 ||
       openclaw.summary.filesParsed > 0 ||
       antigravity.summary.filesParsed > 0 ||
+      cursorTranscript.summary.filesParsed > 0 ||
       dsh.summary.filesParsed > 0 ||
       pi.summary.filesParsed > 0 ||
       omp.summary.filesParsed > 0 ||
@@ -6284,6 +6368,7 @@ export async function scanLocalUsage(
     ...grok.events,
     ...openclaw.events,
     ...antigravity.events,
+    ...cursorTranscript.events,
     ...dsh.events,
     ...pi.events,
     ...omp.events,
@@ -6318,6 +6403,7 @@ export async function scanLocalUsage(
     grok.summary,
     openclaw.summary,
     antigravity.summary,
+    cursorTranscript.summary,
     dsh.summary,
     pi.summary,
     omp.summary,
