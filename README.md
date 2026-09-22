@@ -117,6 +117,31 @@ the official npm registry explicitly:
 npx --yes --registry=https://registry.npmjs.org @estelwalks/aitracker@latest
 ```
 
+#### macOS Gatekeeper
+
+The macOS installer is currently ad-hoc signed and not notarized. If macOS
+shows “Apple cannot check it for malicious software” or says the app cannot be
+opened, first verify the downloaded file against the release's `checksums.txt`,
+then use one of these per-app methods:
+
+1. In Finder, control-click `AITracker.app` and choose **Open**, then confirm
+   **Open** in the dialog.
+2. If macOS still blocks it, open **System Settings → Privacy & Security**,
+   scroll to the security message for AITracker, click **Open Anyway**, and
+   confirm with your password or Touch ID.
+3. As an alternative, after dragging the app to `/Applications`, remove only
+   this app's quarantine attribute in Terminal:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/AITracker.app
+   open /Applications/AITracker.app
+   ```
+
+Do not disable Gatekeeper globally with `spctl --master-disable`. These steps
+only allow the app you downloaded; if the checksum does not match, delete it
+and download the installer again from the official
+[Releases page](https://github.com/estelwalks/aitracker/releases/latest).
+
 #### Homebrew (macOS)
 
 Install and upgrade the stable Cask from the project's Tap:
