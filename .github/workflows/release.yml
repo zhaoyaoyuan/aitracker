@@ -189,6 +189,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_REF }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -221,7 +223,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$RELEASE_REF" >/dev/null 2>&1; then
-            echo "::error::A GitHub release already exists for $GITHUB_REF_NAME; refusing to overwrite it."
+            echo "::error::A GitHub release already exists for $RELEASE_REF; refusing to overwrite it."
             exit 1
           fi
 
@@ -240,7 +242,7 @@ jobs:
               echo "## What's changed"
               echo
             } > release-notes.md
-            echo "RELEASE_TITLE=AITracker $GITHUB_REF_NAME" >> "$GITHUB_ENV"
+            echo "RELEASE_TITLE=AITracker $RELEASE_REF" >> "$GITHUB_ENV"
           else
             cat > release-notes.md <<'EOF'
           Unsigned beta release for manual verification. Review the assets and checksums before using this prerelease.
@@ -248,7 +250,7 @@ jobs:
           ## What's changed
 
           EOF
-            echo "RELEASE_TITLE=AITracker $GITHUB_REF_NAME (unsigned beta)" >> "$GITHUB_ENV"
+            echo "RELEASE_TITLE=AITracker $RELEASE_REF (unsigned beta)" >> "$GITHUB_ENV"
           fi
           node scripts/changelog-release-notes.mjs --version "$version" --output - >> release-notes.md
           # Quoted heredoc: the inline code below must survive without backticks
