@@ -120,6 +120,7 @@ export const sessions = {
     distillToast:
       "Copied the selected {count} message segments — paste them into the distill workbench",
     generateReport: "Generate report",
+    toolCalls: "{count} tool calls",
     thinking: "thinking",
     anchorMark: "START",
     selectedMark: "SEL",

@@ -24,6 +24,7 @@ import { openReadOnlySqlite } from "../../../platform/database/infrastructure/sq
 import type {
   SessionTranscript,
   SessionTranscriptMessage,
+  SessionTranscriptToolCall,
 } from "../contracts.ts";
 
 /**
@@ -134,6 +135,7 @@ function stringValue(value: unknown): string | undefined {
 function sqliteTextValue(value: unknown): string | undefined {
   const text = stringValue(value);
   if (text != null) return text;
+  if (typeof value === "bigint") return value.toString();
   if (value instanceof Uint8Array) {
     const decoded = new TextDecoder().decode(value);
     return decoded.length > 0 ? decoded : undefined;
@@ -423,6 +425,250 @@ function pushMessage(
 // ---------------------------------------------------------------------------
 // Claude Code — ~/.claude/projects/<encoded-cwd>/*.jsonl
 // ---------------------------------------------------------------------------
+
+/** Parsed Cursor bubble row plus the header metadata used to render it. */
+interface CursorBubbleEntry {
+  type: number;
+  bubbleId: string;
+  createdAt: number;
+  text: string;
+  isThought: boolean;
+  toolName: string | null;
+  toolRawArgs: string;
+  toolStatus: string | null;
+}
+
+/** Collapse parsed tool arguments to a single human-readable line. */
+function cursorToolSummary(rawArgs: string, resultText: string): string {
+  let summary = "";
+  if (rawArgs) {
+    try {
+      const parsed = asObject(JSON.parse(rawArgs));
+      if (parsed != null) {
+        for (const value of Object.values(parsed)) {
+          if (typeof value === "string" && value.trim() !== "") {
+            summary = value.trim().split("\n")[0] ?? "";
+            break;
+          }
+          if (typeof value === "number" || typeof value === "boolean") {
+            summary = String(value);
+            break;
+          }
+        }
+      }
+    } catch {
+      // rawArgs is not always JSON; fall through to the result text.
+    }
+  }
+  if (summary === "") {
+    summary = resultText.trim().split("\n")[0] ?? "";
+  }
+  return summary.length > 160 ? `${summary.slice(0, 160)}…` : summary;
+}
+
+/**
+ * Cursor transcript reader (IDE composer sessions).
+ *
+ * Modern Cursor stores the ordered conversation as headers on the composer
+ * row (`fullConversationHeadersOnly`) with the actual bubble bodies in
+ * per-composer rows keyed `bubbleId:<composerId>:<bubbleId>`; older builds
+ * used plain `bubbleId:<bubbleId>` rows and some builds inline a
+ * `conversation` array or a lazy `conversationMap` on the composer row. All
+ * four shapes are handled here.
+ *
+ * PRIVACY BOUNDARY — in-memory only, never persisted or uploaded: bubble
+ * bodies are read into memory solely to render this page.
+ */
+async function readCursorTranscript(
+  root: string,
+  sessionId: string,
+  out: CollectedMessage[],
+  limits: Limits,
+): Promise<void> {
+  const databasePath = join(root, "User", "globalStorage", "state.vscdb");
+  let database: ReturnType<typeof openReadOnlySqlite> | undefined;
+  try {
+    database = openReadOnlySqlite(databasePath);
+    const composerRow = database
+      .queryRows(
+        "SELECT value FROM cursorDiskKV WHERE key = ?",
+        `composerData:${sessionId}`,
+      )
+      .at(0);
+    if (composerRow == null) return;
+    let composer: JsonObject | undefined;
+    try {
+      composer = asObject(JSON.parse(sqliteTextValue(composerRow.value) ?? ""));
+    } catch {
+      composer = undefined;
+    }
+    if (composer == null) return;
+
+    const headers: Array<{
+      bubbleId: string;
+      type: number;
+      createdAt: number;
+    }> = [];
+    const inlineBodies = new Map<string, JsonObject>();
+    const pushHeader = (value: unknown, fallbackType: number) => {
+      const header = asObject(value);
+      const bubbleId = stringValue(header?.bubbleId);
+      if (bubbleId == null || bubbleId === "") return;
+      const type = Number(header?.type ?? fallbackType);
+      headers.push({
+        bubbleId,
+        type: Number.isFinite(type) ? type : fallbackType,
+        createdAt: timestampMs(header?.createdAt ?? header?.startedAtMs),
+      });
+      // Inline shapes carry the body on the header itself; the per-composer
+      // bubble row (when present) remains the body of truth.
+      if (header?.text != null) inlineBodies.set(bubbleId, header);
+    };
+    if (Array.isArray(composer.fullConversationHeadersOnly)) {
+      for (const header of composer.fullConversationHeadersOnly) {
+        pushHeader(header, 0);
+      }
+    } else if (Array.isArray(composer.conversation)) {
+      for (const bubble of composer.conversation) {
+        pushHeader(bubble, Number(asObject(bubble)?.type ?? 0));
+      }
+    }
+    const conversationMap = asObject(composer.conversationMap);
+    if (headers.length === 0 && conversationMap != null) {
+      for (const [bubbleId, bubble] of Object.entries(conversationMap)) {
+        pushHeader(
+          { ...asObject(bubble), bubbleId },
+          Number(asObject(bubble)?.type ?? 0),
+        );
+      }
+    }
+    if (headers.length === 0) return;
+
+    const loadBubble = (bubbleId: string): JsonObject | undefined => {
+      for (const key of [
+        `bubbleId:${sessionId}:${bubbleId}`,
+        `bubbleId:${bubbleId}`,
+      ]) {
+        const row = database
+          ?.queryRows("SELECT value FROM cursorDiskKV WHERE key = ?", key)
+          .at(0);
+        if (row != null) {
+          try {
+            return asObject(JSON.parse(sqliteTextValue(row.value) ?? ""));
+          } catch {
+            return undefined;
+          }
+        }
+      }
+      // Inline shapes carry the body directly.
+      const inline = inlineBodies.get(bubbleId);
+      return (
+        inline ??
+        (conversationMap != null
+          ? asObject(conversationMap[bubbleId])
+          : undefined)
+      );
+    };
+
+    const clamp = (text: string): string =>
+      text.length > limits.maxTextLength
+        ? `${text.slice(0, limits.maxTextLength)}…`
+        : text;
+    let seq = 0;
+    let pendingThinking = "";
+    let pendingTools: SessionTranscriptToolCall[] = [];
+
+    const iso = (ms: number): string | undefined =>
+      ms === Number.MAX_SAFE_INTEGER ? undefined : new Date(ms).toISOString();
+
+    const flushAssistant = (ts: number, text: string) => {
+      if (text === "" && pendingThinking === "" && pendingTools.length === 0)
+        return;
+      out.push({
+        ts,
+        seq: seq++,
+        message: {
+          role: "assistant",
+          text: clamp(text),
+          ...(pendingThinking === ""
+            ? {}
+            : { thinking: clamp(pendingThinking) }),
+          ...(pendingTools.length === 0 ? {} : { tools: [...pendingTools] }),
+          ...(iso(ts) == null ? {} : { ts: iso(ts) }),
+        },
+      });
+      pendingThinking = "";
+      pendingTools = [];
+    };
+
+    for (const header of headers) {
+      if (out.length >= limits.maxMessages) break;
+      const bubble = loadBubble(header.bubbleId);
+      const type = header.type !== 0 ? header.type : Number(bubble?.type ?? 0);
+      const text = stringValue(bubble?.text) ?? "";
+      if (type === 1) {
+        // A user turn ends any dangling assistant group (tool calls with no
+        // final text bubble still belong to the previous turn).
+        flushAssistant(header.createdAt, "");
+        const trimmed = text.trim();
+        if (trimmed !== "") {
+          const userTs = iso(header.createdAt);
+          out.push({
+            ts: header.createdAt,
+            seq: seq++,
+            message: {
+              role: "user",
+              text: clamp(trimmed),
+              ...(userTs == null ? {} : { ts: userTs }),
+            },
+          });
+        }
+        continue;
+      }
+      if (type !== 2) continue;
+      const toolData = asObject(bubble?.toolFormerData);
+      const toolName = stringValue(toolData?.name);
+      if (toolName != null && toolName !== "") {
+        pendingTools.push({
+          name: toolName,
+          summary: cursorToolSummary(
+            stringValue(toolData?.rawArgs) ?? "",
+            text,
+          ),
+          ...(stringValue(toolData?.status) == null
+            ? {}
+            : { status: stringValue(toolData?.status) ?? undefined }),
+        });
+        continue;
+      }
+      if (bubble?.isThought === true) {
+        pendingThinking =
+          pendingThinking === "" ? text : `${pendingThinking}\n\n${text}`;
+        continue;
+      }
+      if (text.trim() !== "") {
+        flushAssistant(header.createdAt, text);
+      }
+    }
+    flushAssistant(Number.MAX_SAFE_INTEGER, "");
+  } catch {
+    // Missing tables / locked database degrade to an empty transcript.
+    return;
+  } finally {
+    database?.close();
+  }
+}
+
+function timestampMs(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric) && value.trim() !== "") return numeric;
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
 
 async function readClaudeTranscript(
   root: string,
@@ -1490,6 +1736,8 @@ async function readSourceTranscript(
   switch (readerKey) {
     case "claude-session-v1":
       return readClaudeTranscript(root, sessionId, out, limits);
+    case "cursor-session-v1":
+      return readCursorTranscript(root, sessionId, out, limits);
     case "codex-session-v1":
       return readCodexTranscript(root, sessionId, out, limits);
     case "grok-session-v1":

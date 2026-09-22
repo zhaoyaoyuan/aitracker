@@ -102,11 +102,24 @@ export interface SessionPage {
  * A transcript is read from the user's own local logs, held in memory only,
  * serialized into the current page response, and never persisted or uploaded.
  */
+/** One tool call attached to an assistant turn (read-only display). */
+export interface SessionTranscriptToolCall {
+  readonly name: string;
+  /** One-line human summary of the input (path, command, url…). */
+  readonly summary: string;
+  /** Tool execution status when the source records one. */
+  readonly status?: string;
+}
+
 export interface SessionTranscriptMessage {
   readonly role: "user" | "assistant";
   readonly text: string;
   /** Reasoning / thinking block; may be absent. */
   readonly thinking?: string;
+  /** Per-message timestamp (ISO) when the source records one. */
+  readonly ts?: string;
+  /** Tool calls grouped into this turn; may be absent or empty. */
+  readonly tools?: readonly SessionTranscriptToolCall[];
 }
 
 export interface SessionTranscript {

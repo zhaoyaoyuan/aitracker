@@ -114,6 +114,7 @@ export const sessions = {
     distillSelected: "蒸馏所选",
     distillToast: "已复制所选 {count} 条消息片段，请在蒸馏工作台粘贴",
     generateReport: "生成简报",
+    toolCalls: "{count} 次工具调用",
     thinking: "thinking",
     anchorMark: "起点",
     selectedMark: "已选",

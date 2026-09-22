@@ -120,6 +120,7 @@ export const sessions = {
     distillToast:
       "선택한 메시지 {count}개를 복사했습니다. 증류 작업대에 붙여넣으세요",
     generateReport: "브리핑 생성",
+    toolCalls: "도구 호출 {count}건",
     thinking: "thinking",
     anchorMark: "시작",
     selectedMark: "선택됨",

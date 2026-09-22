@@ -120,6 +120,7 @@ export const sessions = {
     distillToast:
       "選択した {count} 件のメッセージ断片をコピーしました。蒸留ワークベンチに貼り付けてください",
     generateReport: "簡報を生成",
+    toolCalls: "ツール呼び出し {count} 件",
     thinking: "thinking",
     anchorMark: "起点",
     selectedMark: "選択中",

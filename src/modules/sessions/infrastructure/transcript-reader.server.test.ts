@@ -1095,3 +1095,155 @@ test("ZCode: extracts ordered user/assistant text and reasoning from db.sqlite",
     assert.deepEqual(after, before);
   });
 });
+
+test("Cursor: reads composer bubbles (headers + per-composer bubble rows) with thinking, tools and timestamps", async () => {
+  await withTempHome(async (home) => {
+    const sessionId = "ada9dfa9-8a1e-462e-a400-ff46eaaddee9";
+    const globalStorage = join(
+      home,
+      "Library",
+      "Application Support",
+      "Cursor",
+      "User",
+      "globalStorage",
+    );
+    await mkdir(globalStorage, { recursive: true });
+    const databasePath = join(globalStorage, "state.vscdb");
+    const database = new NodeSqliteDatabase({ path: databasePath });
+    try {
+      database.exec(
+        "CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value BLOB)",
+      );
+      const insert = database.prepare(
+        "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+      );
+      const composer = {
+        composerId: sessionId,
+        fullConversationHeadersOnly: [
+          {
+            bubbleId: "b-user",
+            type: 1,
+            createdAt: "2026-09-22T02:12:54.544Z",
+          },
+          { bubbleId: "b-think", type: 2, createdAt: "2026-09-22T02:12:58Z" },
+          { bubbleId: "b-tool", type: 2, createdAt: "2026-09-22T02:13:00Z" },
+          { bubbleId: "b-text", type: 2, createdAt: "2026-09-22T02:13:05Z" },
+          { bubbleId: "b-empty", type: 2, createdAt: "2026-09-22T02:13:06Z" },
+        ],
+      };
+      insert.run(`composerData:${sessionId}`, JSON.stringify(composer));
+      const bubble = (body: Record<string, unknown>): void => {
+        insert.run(
+          `bubbleId:${sessionId}:${body.bubbleId as string}`,
+          JSON.stringify(body),
+        );
+      };
+      bubble({
+        bubbleId: "b-user",
+        type: 1,
+        text: "PRIVATE USER PROMPT",
+      });
+      bubble({
+        bubbleId: "b-think",
+        type: 2,
+        isThought: true,
+        text: "PRIVATE THINKING",
+      });
+      bubble({
+        bubbleId: "b-tool",
+        type: 2,
+        text: "PRIVATE TOOL RESULT",
+        toolFormerData: {
+          name: "read_file_v2",
+          rawArgs: JSON.stringify({ path: "/tmp/demo.ts" }),
+          status: "completed",
+        },
+      });
+      bubble({
+        bubbleId: "b-text",
+        type: 2,
+        text: "**Done.** Fixed.",
+      });
+      bubble({ bubbleId: "b-empty", type: 2, text: "" });
+    } finally {
+      database.close();
+    }
+
+    const transcript = await loadSessionTranscript(
+      { source: "cursor", sessionId },
+      { homeDirectory: home },
+    );
+    assert.equal(transcript.source, "cursor");
+    // thinking + tool call + final text group into ONE assistant turn; the
+    // trailing empty bubble collapses away.
+    assert.equal(transcript.messages.length, 2);
+    const [user, assistant] = transcript.messages;
+    assert.equal(user?.role, "user");
+    assert.equal(user?.text, "PRIVATE USER PROMPT");
+    assert.equal(user?.ts, "2026-09-22T02:12:54.544Z");
+    assert.equal(assistant?.role, "assistant");
+    assert.equal(assistant?.thinking, "PRIVATE THINKING");
+    assert.equal(assistant?.tools?.length, 1);
+    assert.equal(assistant?.tools?.[0]?.name, "read_file_v2");
+    assert.equal(assistant?.tools?.[0]?.summary, "/tmp/demo.ts");
+    assert.equal(assistant?.tools?.[0]?.status, "completed");
+    assert.equal(assistant?.text, "**Done.** Fixed.");
+    // Tool result text is display metadata only — never re-exported raw, and
+    // the trailing empty bubble collapses away.
+    assert.equal(
+      transcript.messages.some((m) => m.text.includes("PRIVATE TOOL RESULT")),
+      false,
+    );
+  });
+});
+
+test("Cursor: falls back to legacy bubbleId rows and inline conversation arrays", async () => {
+  await withTempHome(async (home) => {
+    const sessionId = "legacy-composer-0001";
+    const globalStorage = join(
+      home,
+      "Library",
+      "Application Support",
+      "Cursor",
+      "User",
+      "globalStorage",
+    );
+    await mkdir(globalStorage, { recursive: true });
+    const database = new NodeSqliteDatabase({
+      path: join(globalStorage, "state.vscdb"),
+    });
+    try {
+      database.exec(
+        "CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value BLOB)",
+      );
+      const insert = database.prepare(
+        "INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)",
+      );
+      // Inline conversation on the composer row, bodies as legacy rows.
+      insert.run(
+        `composerData:${sessionId}`,
+        JSON.stringify({
+          conversation: [
+            { bubbleId: "l1", type: 1, text: "INLINE USER" },
+            { bubbleId: "l2", type: 2, text: "INLINE REPLY" },
+          ],
+        }),
+      );
+      insert.run(
+        "bubbleId:l2",
+        JSON.stringify({ type: 2, text: "LEGACY ROW WINS" }),
+      );
+    } finally {
+      database.close();
+    }
+    const transcript = await loadSessionTranscript(
+      { source: "cursor", sessionId },
+      { homeDirectory: home },
+    );
+    assert.equal(transcript.messages.length, 2);
+    assert.equal(transcript.messages[0]?.text, "INLINE USER");
+    // The bubble row is the body of truth when both the composer-inlined
+    // text and a legacy row exist.
+    assert.equal(transcript.messages[1]?.text, "LEGACY ROW WINS");
+  });
+});

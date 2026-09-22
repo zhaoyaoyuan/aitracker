@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -165,9 +165,13 @@ export function TranscriptPanel({ session }: { session: SessionSummary }) {
         ) : null}
         {status === "ready" && total > 0 ? (
           <>
-            <div className="space-y-4">
-              {transcript.map((message, index) => (
-                <Bubble key={index} message={message} source={session.source} />
+            <div className="space-y-5">
+              {transcript.map((message) => (
+                <Bubble
+                  key={`${message.role}-${message.ts ?? ""}-${message.text.slice(0, 24)}-${message.tools?.length ?? 0}`}
+                  message={message}
+                  source={session.source}
+                />
               ))}
             </div>
             <p className="mt-6 text-center text-[10px] tracking-wide text-muted-foreground">
@@ -187,52 +191,120 @@ function Bubble({
   message: SessionTranscriptMessage;
   source: SessionSummary["source"];
 }) {
-  const { t } = useI18n();
+  const { t, format } = useI18n();
   const [open, setOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const time = message.ts;
 
   if (message.role === "user") {
     return (
-      <div className="flex items-start justify-end gap-2">
-        <div className="max-w-[80%] rounded-xl rounded-tr-sm border border-primary bg-primary/12 px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
+      <div className="group flex flex-col items-end gap-1">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md border border-primary/35 bg-primary/12 px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap text-foreground shadow-sm">
           {message.text}
+        </div>
+        <div className="aitracker-num flex items-center gap-1.5 pr-1 text-[10px] text-muted-foreground/70 opacity-0 transition-opacity group-hover:opacity-100">
+          {time ? <span>{format.formatTime(time)}</span> : null}
         </div>
       </div>
     );
   }
 
+  const hasBody = message.text.trim() !== "";
   return (
-    <div className="flex items-start justify-start gap-2">
-      <div className="max-w-[85%] rounded-xl rounded-tl-sm border border-border bg-surface-2 px-3.5 py-2.5">
-        {message.thinking ? (
-          <div className="mb-2 border-b border-border pb-2">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen((current) => !current);
-              }}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ChevronRight
-                className={`size-3 transition-transform ${open ? "rotate-90" : ""}`}
-              />
-              {t("sessions.transcript.thinking")}
-            </button>
-            {open ? (
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground italic whitespace-pre-wrap">
-                {message.thinking}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        {source === "aipy" ? (
-          <MarkdownTranscriptBody text={message.text} />
-        ) : (
-          <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
-            {message.text}
-          </p>
-        )}
+    <div className="group flex flex-col items-start gap-1">
+      <div className="flex w-full items-start gap-2.5">
+        <div className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2">
+          <BrandIcon name={source} className="size-3.5 text-primary" />
+        </div>
+        <div className="min-w-0 max-w-[calc(100%-2.5rem)] flex-1 space-y-2">
+          {message.tools && message.tools.length > 0 ? (
+            <div className="overflow-hidden rounded-lg border border-border bg-surface-1">
+              <button
+                type="button"
+                onClick={() => setToolsOpen((current) => !current)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+              >
+                <ChevronRight
+                  className={`size-3 transition-transform ${toolsOpen ? "rotate-90" : ""}`}
+                />
+                <Wrench className="size-3" />
+                {t("sessions.transcript.toolCalls", {
+                  count: message.tools.length,
+                })}
+                {message.tools.some((tool) => tool.status === "error") ? (
+                  <span className="rounded bg-destructive/15 px-1 text-[10px] text-destructive">
+                    error
+                  </span>
+                ) : null}
+              </button>
+              {toolsOpen ? (
+                <ul className="border-t border-border">
+                  {message.tools.map((tool, toolIndex) => (
+                    <li
+                      key={toolIndex}
+                      className="border-b border-border/60 px-3 py-1.5 last:border-b-0"
+                    >
+                      <div className="flex min-w-0 items-center gap-2 text-[11px]">
+                        <span className="shrink-0 font-mono text-foreground">
+                          {tool.name}
+                        </span>
+                        {tool.status != null && tool.status !== "completed" ? (
+                          <span
+                            className={`shrink-0 rounded px-1 text-[10px] ${
+                              tool.status === "error"
+                                ? "bg-destructive/15 text-destructive"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {tool.status}
+                          </span>
+                        ) : null}
+                        {tool.summary ? (
+                          <span className="truncate text-muted-foreground">
+                            {tool.summary}
+                          </span>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+          {hasBody ? (
+            <div className="rounded-2xl rounded-tl-md border border-border bg-surface-2 px-4 py-3 shadow-sm">
+              {message.thinking ? (
+                <div className="mb-2 border-b border-border pb-2">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpen((current) => !current);
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ChevronRight
+                      className={`size-3 transition-transform ${open ? "rotate-90" : ""}`}
+                    />
+                    {t("sessions.transcript.thinking")}
+                  </button>
+                  {open ? (
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground italic whitespace-pre-wrap">
+                      {message.thinking}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <MarkdownTranscriptBody text={message.text} />
+            </div>
+          ) : null}
+        </div>
       </div>
+      {time ? (
+        <div className="aitracker-num pl-9 text-[10px] text-muted-foreground/70 opacity-0 transition-opacity group-hover:opacity-100">
+          {format.formatTime(time)}
+        </div>
+      ) : null}
     </div>
   );
 }
