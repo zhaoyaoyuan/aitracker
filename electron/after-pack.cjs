@@ -271,6 +271,19 @@ exports.default = async function afterPack(context) {
     );
   }
   codesignArgs.push("--sign", identity.name, appPath);
+  // Finder/file-provider extended attributes (com.apple.provenance,
+  // com.apple.FinderInfo, quarantine) copied from the working tree make
+  // codesign fail with "resource fork, Finder information, or similar
+  // detritus not allowed". Strip them from the freshly staged bundle before
+  // signing so packaging never depends on the workspace's xattr state.
+  try {
+    execFileSync("xattr", ["-cr", appPath], { stdio: "pipe" });
+  } catch (error) {
+    console.warn(
+      `[after-pack] xattr cleanup failed (${String(error)}); continuing — ` +
+        "codesign will fail if the bundle carries detritus.",
+    );
+  }
   execFileSync("codesign", codesignArgs, { stdio: "inherit" });
 
   // Read the requirement back and report it. This string is what macOS stores

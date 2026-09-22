@@ -32,6 +32,7 @@ extraResources:
     filter:
       - "**/*"
 afterPack: electron/after-pack.cjs
+afterSign: electron/after-sign.cjs
 mac:
   target:
     - target: dmg
