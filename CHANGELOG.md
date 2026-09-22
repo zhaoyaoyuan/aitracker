@@ -5,13 +5,19 @@ uses semantic versioning for published releases.
 
 ## [Unreleased]
 
-<!--
-Unreleased work is summarised here. The release branch turns this whole
-section into `## [X.Y.Z] - YYYY-MM-DD` when the version is actually
-published, in the same commit that bumps the package versions and receives
-the tag, so a numbered section means "this version shipped" and is never
-opened early. Individual fixes do not have to touch this file.
--->
+<!-- Future changes go here. -->
+
+## [1.0.5] - 2026-09-20
+
+### Highlights
+
+- Cursor sessions are now discovered from modern transcript files under `~/.cursor/projects`
+- Cursor usage trends now include recent transcript activity as clearly labelled local estimates when native token counts are unavailable
+- Cursor session history remains read-only and transcript content is never persisted in usage snapshots
+
+### Details
+
+- Added modern Cursor transcript discovery and privacy-preserving token estimation for recent usage trends. Estimates are explicitly marked rather than presented as provider-reported token counts.
 
 ## [1.0.4] - 2026-09-11
 
@@ -24,6 +30,8 @@ opened early. Individual fixes do not have to touch this file.
 - Usage scans no longer read a whole database history, so a large install stays fast instead of getting slower with age
 - DeepSeek Harness sessions are collected again: the harness moved its session logs to a versioned file name
 - A release no longer attaches a duplicate copy of every installer, and the Windows ARM64 installer is listed again
+- Cursor sessions are now discovered from modern transcript files under `~/.cursor/projects`
+- Cursor usage trends now include recent transcript activity as clearly labelled local estimates when native token counts are unavailable
 
 ### Details
 
