@@ -5,17 +5,26 @@ uses semantic versioning for published releases.
 
 ## [Unreleased]
 
+<!-- Future changes go here. -->
+
+## [1.0.6] - 2026-09-22
+
 ### Highlights
 
-- Cursor token trends are now based on Cursor's own reported per-session context totals (`promptTokenBreakdown`) instead of local character-based estimates: on a typical install nearly every recent Cursor event becomes real reported data
+- Cursor token trends now use Cursor's own reported per-session context totals (`promptTokenBreakdown`) instead of local character-based estimates: on a typical install nearly every recent Cursor event becomes real reported data
+- Cursor session transcripts are now readable: the session detail page renders the full IDE conversation with thinking, tool calls and timestamps
+- Session detail UI overhaul: every assistant message renders as Markdown, tool calls collapse into a per-turn group, and both roles show per-message times
 - The remaining character-based transcript estimates are dropped automatically whenever a tool-reported session covers the same time window, so Cursor activity is never double-counted
 - Claude Code cache-creation tokens now fall back to the nested 5-minute/1-hour breakdown when the flat field is missing
 
 ### Details
 
-- Added a Cursor composer usage reader over the IDE's `state.vscdb` (`composerData` rows), emitting one `measurement: "reported"` event per composer. Only the token breakdown metadata is decoded; conversation bodies are never retained or persisted.
+- Added a Cursor composer usage reader over the IDE's `state.vscdb` (`composerData` rows), emitting one `measurement: "reported"` event per composer. Only the token breakdown metadata is decoded; conversation bodies are never retained or persisted in usage snapshots.
 - Renamed the Cursor usage reader to `cursor-usage-v1` (it now reads both transcript JSONL and the composer database) and taught the registry validation rules about mixed-format readers that apply the row budget and byte cap per path shape.
 - Migration 0004 widened the `usage_aggregate_buckets.measurement` CHECK to accept `'reported'`, rebuilding the table child-out-first so foreign-key cascades cannot touch existing rows.
+- Added a Cursor transcript reader over the composer's `fullConversationHeadersOnly` and per-composer `bubbleId:<composerId>:<bubbleId>` rows, with fallbacks to legacy single-id rows, inline conversation arrays and lazy conversation maps. Transcript content stays in memory for the current page render only.
+- Session transcript messages now carry optional tool calls and per-message timestamps across all sources.
+- macOS packaging strips Finder/file-provider extended attributes before and after code signing, so a synced workspace can no longer bake "resource fork, Finder information" detritus into the DMG.
 
 ## [1.0.5] - 2026-09-20
 
