@@ -88,27 +88,6 @@ npm run dev:desktop
 
 모든 버전은 [Releases 페이지](https://github.com/estelwalks/aitracker/releases/latest)에서 확인할 수 있습니다.
 
-다음 명령은 macOS 또는 Windows 정식 버전을 설치합니다. 정식 버전과 각 패키지
-관리자의 메타데이터가 공개된 후 사용할 수 있습니다.
-
-#### npx (macOS 및 Windows)
-
-Node.js와 npm이 설치되어 있다면 다음 명령을 실행하세요.
-
-```bash
-npx --yes @estelwalks/aitracker@latest
-```
-
-이 명령은 데스크톱 설치 파일을 다운로드하여 엽니다. `@latest`는 항상 최신 정식 버전을
-따르므로 수정할 필요가 없습니다. 특정 빌드를 재현하려면 버전을 고정하세요
-(`@estelwalks/aitracker@1.0.3`). 베타 버전은 `@beta`로 배포됩니다.
-
-사용 중인 npm 미러에 이 패키지가 없다면 공식 npm registry를 명시하세요.
-
-```bash
-npx --yes --registry=https://registry.npmjs.org @estelwalks/aitracker@latest
-```
-
 #### Homebrew (macOS)
 
 프로젝트 자체 Tap에서 정식 버전 Cask를 설치하거나 업그레이드하세요.

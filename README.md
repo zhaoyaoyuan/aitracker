@@ -97,26 +97,6 @@ The following commands install the official stable release on macOS or
 Windows. The package-manager entries become available after the stable release
 and their corresponding distribution metadata have been published.
 
-#### npx (macOS and Windows)
-
-With Node.js and npm installed, run:
-
-```bash
-npx --yes @estelwalks/aitracker@latest
-```
-
-This command downloads and opens the desktop installer. `@latest` follows the
-newest stable release, so it never needs editing; pin a version
-(`@estelwalks/aitracker@1.0.3`) when you need to reproduce an exact build. Beta
-builds are published under `@beta`.
-
-If your npm configuration uses a mirror that does not contain the package, use
-the official npm registry explicitly:
-
-```bash
-npx --yes --registry=https://registry.npmjs.org @estelwalks/aitracker@latest
-```
-
 #### macOS Gatekeeper
 
 The macOS installer is currently ad-hoc signed and not notarized. If macOS
