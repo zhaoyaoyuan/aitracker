@@ -112,6 +112,16 @@ const CODEX_ROLLOUT_PATTERN = /rollout-.+\.jsonl$/;
 const READER_DEFAULT_ROOTS: Readonly<Record<string, readonly string[]>> = {
   "claude-session-v1": [".claude"],
   "codex-session-v1": [".codex"],
+  "cursor-session-v1": [
+    // The composer database lives in per-platform app-data; the fallback list
+    // is platform-unfiltered (openReadOnlySqlite just fails on the missing
+    // ones), so every shape is listed: macOS Library, Windows Roaming and
+    // Linux XDG config. Covers platforms where the registry resolves no
+    // session paths (e.g. Linux, where Cursor itself is still "planned").
+    "Library/Application Support/Cursor",
+    "AppData/Roaming/Cursor",
+    ".config/Cursor",
+  ],
   "grok-session-v1": [".grok"],
   "dsh-session-v1": [".dsh"],
   "pi-session-v1": [".pi"],
