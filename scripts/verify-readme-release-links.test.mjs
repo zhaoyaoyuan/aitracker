@@ -17,7 +17,8 @@ const SCRIPT = join(
   "verify-readme-release-links.mjs",
 );
 const REPOSITORY_ROOT = join(dirname(SCRIPT), "..");
-const BASE = "https://github.com/zhaoyaoyuan/aitracker/releases/latest/download";
+const BASE =
+  "https://github.com/zhaoyaoyuan/aitracker/releases/latest/download";
 
 const README_WITH_ALL_INSTALLERS = [
   "# AITracker",
