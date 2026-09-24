@@ -7,6 +7,20 @@ uses semantic versioning for published releases.
 
 <!-- Future changes go here. -->
 
+## [1.0.8] - 2026-09-24
+
+### Highlights
+
+- Session transcript bodies are now rendered by the `markdown-render` chat pipeline: GFM tables, soft line breaks, math, code highlighting and Mermaid diagrams with lazy loading
+- Mermaid diagrams and Markdown colors follow the app's light/dark theme automatically
+- Raw HTML stays disabled for conversation content — markup in assistant messages is rendered structurally, never injected
+
+### Details
+
+- Adopted the `markdown-render` package (React entry, chat preset) for session transcript bodies, replacing the ad-hoc reports renderer in the session detail page; the reports module keeps its own renderer.
+- Bridged the package's CSS variables to the app theme (`--md-fg/--md-border/--md-pre-bg` etc.) so light/dark follow one source of truth.
+- Tests pin `TSX_TSCONFIG_PATH` to a config that includes the package's TSX sources so tsx compiles them with the automatic JSX runtime.
+
 ## [1.0.7] - 2026-09-24
 
 ### Highlights
