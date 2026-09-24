@@ -5,9 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/estelwalks/aitracker/stargazers"><img src="https://img.shields.io/github/stars/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub stars" /></a>
-  <a href="https://github.com/estelwalks/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="License" /></a>
-  <a href="https://github.com/estelwalks/aitracker/releases"><img src="https://img.shields.io/github/v/release/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="Latest release" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/stargazers"><img src="https://img.shields.io/github/stars/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub stars" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="License" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/releases"><img src="https://img.shields.io/github/v/release/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="Latest release" /></a>
 </p>
 
 <p align="center">
@@ -62,7 +62,7 @@ root project dependencies.
 - macOS or Windows for the complete desktop experience
 
 ```bash
-git clone https://github.com/estelwalks/aitracker.git
+git clone https://github.com/zhaoyaoyuan/aitracker.git
 cd aitracker
 npm ci
 npm run dev:desktop
@@ -77,13 +77,13 @@ valid across releases and always resolve to the newest published one: installer
 names carry no version, so the release tag is the only thing that changes.
 
 - macOS (Apple Silicon):
-  [AITracker-arm64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-arm64.dmg)
+  [AITracker-arm64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-arm64.dmg)
 - macOS (Intel):
-  [AITracker-x64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-x64.dmg)
+  [AITracker-x64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-x64.dmg)
 - Windows (x64):
-  [AITracker-Setup-x64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
+  [AITracker-Setup-x64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
 - Windows (ARM64):
-  [AITracker-Setup-arm64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
+  [AITracker-Setup-arm64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
 
 Each release lists its own `release-metadata.json` and `checksums.txt`, which
 record the exact version and SHA-256 of the files in that release. For a
@@ -91,7 +91,7 @@ byte-exact build, take the file from the release whose tag you need instead of
 from `latest`.
 
 All releases are listed on the
-[Releases page](https://github.com/estelwalks/aitracker/releases/latest).
+[Releases page](https://github.com/zhaoyaoyuan/aitracker/releases/latest).
 
 The following commands install the official stable release on macOS or
 Windows. The package-manager entries become available after the stable release
@@ -120,16 +120,16 @@ then use one of these per-app methods:
 Do not disable Gatekeeper globally with `spctl --master-disable`. These steps
 only allow the app you downloaded; if the checksum does not match, delete it
 and download the installer again from the official
-[Releases page](https://github.com/estelwalks/aitracker/releases/latest).
+[Releases page](https://github.com/zhaoyaoyuan/aitracker/releases/latest).
 
 #### Homebrew (macOS)
 
 Install and upgrade the stable Cask from the project's Tap:
 
 ```bash
-brew tap estelwalks/aitracker
-brew install --cask estelwalks/aitracker/aitracker
-brew upgrade --cask estelwalks/aitracker/aitracker
+brew tap zhaoyaoyuan/aitracker
+brew install --cask zhaoyaoyuan/aitracker/aitracker
+brew upgrade --cask zhaoyaoyuan/aitracker/aitracker
 ```
 
 #### WinGet (Windows)
@@ -137,8 +137,8 @@ brew upgrade --cask estelwalks/aitracker/aitracker
 Install and upgrade the stable package from the Microsoft Community Repository:
 
 ```powershell
-winget install --id estelwalks.AITracker -e
-winget upgrade --id estelwalks.AITracker -e
+winget install --id zhaoyaoyuan.AITracker -e
+winget upgrade --id zhaoyaoyuan.AITracker -e
 ```
 
 ### Build and Test

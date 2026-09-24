@@ -14,9 +14,9 @@ import {
 } from "../src/cli.mjs";
 
 const metadataUrl =
-  "https://github.com/estelwalks/aitracker/releases/download/v1.0.0-beta.3/release-metadata.json";
+  "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.0.0-beta.3/release-metadata.json";
 const artifactUrl =
-  "https://github.com/estelwalks/aitracker/releases/download/v1.0.0-beta.3/AITracker-arm64.dmg";
+  "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.0.0-beta.3/AITracker-arm64.dmg";
 const bytes = Buffer.from("installer-bytes");
 const sha256 = createHash("sha256").update(bytes).digest("hex");
 const delay = (milliseconds) =>
@@ -25,7 +25,7 @@ const metadata = {
   schemaVersion: 1,
   appVersion: "1.0.0-beta.3",
   channel: "beta",
-  repository: "estelwalks/aitracker",
+  repository: "zhaoyaoyuan/aitracker",
   gitTag: "v1.0.0-beta.3",
   artifacts: {
     "darwin-arm64": {

@@ -168,7 +168,7 @@ release/release-metadata.json --channel <stable|beta> --token
 - After publishing, verify the README links resolve to the new release, for
   example
   `curl -sIL -o /dev/null -w '%{http_code} %{url_effective}\n'
-https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-arm64.dmg`
+https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-arm64.dmg`
   should end on the new tag's asset URL, not the previous release's.
 - This workflow does not publish npm packages, create or update a Homebrew Tap,
   or notarize macOS builds. The only external credentials it reads are the

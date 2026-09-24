@@ -19,11 +19,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/estelwalks/aitracker.git"
+    "url": "git+https://github.com/zhaoyaoyuan/aitracker.git"
   },
-  "homepage": "https://github.com/estelwalks/aitracker#readme",
+  "homepage": "https://github.com/zhaoyaoyuan/aitracker#readme",
   "bugs": {
-    "url": "https://github.com/estelwalks/aitracker/issues"
+    "url": "https://github.com/zhaoyaoyuan/aitracker/issues"
   },
   "scripts": {
     "dev": "vite dev",

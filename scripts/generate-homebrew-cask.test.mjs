@@ -24,7 +24,7 @@ function fixture(channel = "stable") {
   // release-metadata.json names the versioned installer at its tag-addressed
   // URL, which is what clients released before 1.0.2 require; the cask must
   // still end up pointing at the versionless URL.
-  const base = `https://github.com/estelwalks/aitracker/releases/download/v${version}`;
+  const base = `https://github.com/zhaoyaoyuan/aitracker/releases/download/v${version}`;
   const artifacts = [
     ["darwin-arm64", `AITracker-${version}-arm64.dmg`, ARM_SHA, 123456],
     ["darwin-x64", `AITracker-${version}-x64.dmg`, INTEL_SHA, 123457],
@@ -34,7 +34,7 @@ function fixture(channel = "stable") {
     schemaVersion: 1,
     appVersion: version,
     channel,
-    repository: "estelwalks/aitracker",
+    repository: "zhaoyaoyuan/aitracker",
     gitTag: `v${version}`,
     artifacts: Object.fromEntries(
       artifacts.map(([key, name, sha256, size]) => [
@@ -83,7 +83,7 @@ test("renders stable Cask with distinct arm/intel URL and SHA mappings", () => {
   assert.match(output, /version "1\.2\.3"/u);
   assert.match(
     output,
-    /on_arch_conditional\(\n\s+arm:\s+"https:\/\/github\.com\/estelwalks\/aitracker\/releases\/latest\/download\/AITracker-arm64\.dmg",\n\s+intel:\s+"https:\/\/github\.com\/estelwalks\/aitracker\/releases\/latest\/download\/AITracker-x64\.dmg",/u,
+    /on_arch_conditional\(\n\s+arm:\s+"https:\/\/github\.com\/zhaoyaoyuan\/aitracker\/releases\/latest\/download\/AITracker-arm64\.dmg",\n\s+intel:\s+"https:\/\/github\.com\/zhaoyaoyuan\/aitracker\/releases\/latest\/download\/AITracker-x64\.dmg",/u,
   );
   assert.match(
     output,

@@ -33,7 +33,7 @@ Network access is feature-driven rather than required for local analytics:
   locally collected usage data, Skills or knowledge content, or account or
   session identifiers are included. These requests are identified with the
   User-Agent header `AITracker/<version> (Electron;
-+https://github.com/estelwalks/aitracker)`;
++https://github.com/zhaoyaoyuan/aitracker)`;
 - when that service is unreachable or the machine is offline, AITracker
   falls back to local data: exchange-rate display keeps the last cached
   snapshot (a stale cache is still used while a background refresh runs, and

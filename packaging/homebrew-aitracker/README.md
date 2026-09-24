@@ -1,7 +1,7 @@
 # AITracker Homebrew Tap
 
 这是第一阶段的自有 Tap 目录，可直接复制到 GitHub 仓库
-[`estelwalks/homebrew-aitracker`](https://github.com/estelwalks/homebrew-aitracker)。
+[`zhaoyaoyuan/homebrew-aitracker`](https://github.com/zhaoyaoyuan/homebrew-aitracker)。
 `Casks/aitracker.rb` 和 `Casks/aitracker-beta.rb` 是没有伪造版本、URL 或
 SHA-256 的模板；发布时必须用同一版本 Release 附件中的
 `release-metadata.json` 生成并覆盖对应文件。
@@ -35,15 +35,15 @@ GitHub Release URL、SHA-256 和大小；它不会计算或复制本地文件 ha
 ## 用户命令
 
 ```sh
-brew tap estelwalks/aitracker
+brew tap zhaoyaoyuan/aitracker
 
 # 稳定频道（stable token）
-brew install --cask estelwalks/aitracker/aitracker
-brew upgrade --cask estelwalks/aitracker/aitracker
+brew install --cask zhaoyaoyuan/aitracker/aitracker
+brew upgrade --cask zhaoyaoyuan/aitracker/aitracker
 
 # beta 频道
-brew install --cask estelwalks/aitracker/aitracker-beta
-brew upgrade --cask estelwalks/aitracker/aitracker-beta
+brew install --cask zhaoyaoyuan/aitracker/aitracker-beta
+brew upgrade --cask zhaoyaoyuan/aitracker/aitracker-beta
 ```
 
 ## 未签名 DMG 与 Gatekeeper
@@ -56,6 +56,6 @@ Finder 中对应用右键选择“打开”。本 Tap 不要求、也不指导�
 
 ## 范围
 
-本目录只维护 `estelwalks/aitracker` 自有 Tap。官方
+本目录只维护 `zhaoyaoyuan/aitracker` 自有 Tap。官方
 `Homebrew/homebrew-cask` 不在第一阶段范围内；在官方 Cask 合并前，不应省略
 Tap 前缀来宣传 `brew install --cask aitracker`。

@@ -1,6 +1,6 @@
 import { URL } from "node:url";
 
-export const REPOSITORY = "estelwalks/aitracker";
+export const REPOSITORY = "zhaoyaoyuan/aitracker";
 export const RELEASE_API_URL = `https://api.github.com/repos/${REPOSITORY}/releases?per_page=100`;
 export const RELEASE_DOWNLOAD_BASE_URL = `https://github.com/${REPOSITORY}/releases/download/`;
 /**
@@ -88,7 +88,7 @@ export function assertAllowedDownloadUrl(value, label = "url") {
     ) ||
     // releases/latest/download/<name> (versionless installers) or
     // releases/download/v<version>/<name> (beta, or a pinned tag).
-    !/^\/estelwalks\/aitracker\/releases\/(?:latest\/download|download\/[^/]+)\/[^/]+$/u.test(
+    !/^\/zhaoyaoyuan\/aitracker\/releases\/(?:latest\/download|download\/[^/]+)\/[^/]+$/u.test(
       parsed.pathname,
     )
   ) {

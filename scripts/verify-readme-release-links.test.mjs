@@ -17,7 +17,7 @@ const SCRIPT = join(
   "verify-readme-release-links.mjs",
 );
 const REPOSITORY_ROOT = join(dirname(SCRIPT), "..");
-const BASE = "https://github.com/estelwalks/aitracker/releases/latest/download";
+const BASE = "https://github.com/zhaoyaoyuan/aitracker/releases/latest/download";
 
 const README_WITH_ALL_INSTALLERS = [
   "# AITracker",
@@ -61,7 +61,7 @@ test("the shipped READMEs satisfy the versionless installer contract", async () 
 test("a versioned installer URL in a README is reported", () => {
   const problems = inspectReadme({
     path: "README.md",
-    text: `${installerReadme()}\n[AITracker-1.0.1-arm64.dmg](https://github.com/estelwalks/aitracker/releases/download/v1.0.1/AITracker-1.0.1-arm64.dmg)\n`,
+    text: `${installerReadme()}\n[AITracker-1.0.1-arm64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.0.1/AITracker-1.0.1-arm64.dmg)\n`,
   });
   assert.equal(problems.length, 1);
   assert.match(problems[0], /pins a versioned installer URL/u);

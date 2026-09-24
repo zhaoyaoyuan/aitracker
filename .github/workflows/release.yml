@@ -261,7 +261,7 @@ jobs:
 
           Installers are attached below: `AITracker-*.dmg` for macOS and `AITracker-Setup-*.exe` for Windows, with SHA-256 checksums in `checksums.txt`. The builds are unsigned, so macOS Gatekeeper or Windows SmartScreen may ask for a per-file confirmation on first launch.
 
-          Install commands and platform notes: see the [README](https://github.com/estelwalks/aitracker#install), or run `npx --yes @estelwalks/aitracker@latest`.
+          Install commands and platform notes: see the [README](https://github.com/zhaoyaoyuan/aitracker#install).
           EOF
 
       - name: Create draft release

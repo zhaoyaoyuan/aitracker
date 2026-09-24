@@ -8,7 +8,7 @@ import {
 } from "../src/release-metadata.mjs";
 
 const goodUrl =
-  "https://github.com/estelwalks/aitracker/releases/latest/download/file.dmg";
+  "https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/file.dmg";
 const artifact = (platform, index) => ({
   name: `file-${index}.dmg`,
   url: goodUrl.replace("file.dmg", `file-${index}.dmg`),
@@ -21,7 +21,7 @@ function validMetadata() {
     schemaVersion: 1,
     appVersion: "1.0.0-beta.1",
     channel: "beta",
-    repository: "estelwalks/aitracker",
+    repository: "zhaoyaoyuan/aitracker",
     gitTag: "v1.0.0-beta.1",
     artifacts: {
       "darwin-arm64": artifact("darwin-arm64", 1),
@@ -92,8 +92,8 @@ test("rejects duplicate/missing platforms, invalid versions, hashes, sizes and c
 test("accepts only the canonical GitHub Releases download host and path", () => {
   assert.doesNotThrow(() => assertAllowedDownloadUrl(goodUrl));
   for (const url of [
-    "http://github.com/estelwalks/aitracker/releases/download/v1/file",
-    "https://evil.example/estelwalks/aitracker/releases/download/v1/file",
+    "http://github.com/zhaoyaoyuan/aitracker/releases/download/v1/file",
+    "https://evil.example/zhaoyaoyuan/aitracker/releases/download/v1/file",
     "https://github.com/estelwalks/other/releases/download/v1/file",
     `${goodUrl}?redirect=evil`,
   ]) {

@@ -13,7 +13,7 @@ import { APP_REPO_URL } from "./app-config.js";
 const githubRepository = new URL(APP_REPO_URL);
 const githubPath = githubRepository.pathname.replace(/\/$/u, "");
 const GITHUB_RELEASES_URL = `https://api.github.com/repos${githubPath}/releases?per_page=100`;
-const RELEASE_REPOSITORY = "estelwalks/aitracker";
+const RELEASE_REPOSITORY = "zhaoyaoyuan/aitracker";
 const MAX_DOWNLOAD_BYTES = 512 * 1024 * 1024;
 const MAX_METADATA_BYTES = 1024 * 1024;
 /** How long the installer download may take before its headers arrive. */

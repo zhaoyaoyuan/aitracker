@@ -29,11 +29,11 @@ export const README_PATHS = Object.freeze([
 ]);
 
 const LATEST_DOWNLOAD_PREFIX =
-  "https://github.com/estelwalks/aitracker/releases/latest/download/";
+  "https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/";
 // A pinned installer link such as releases/download/v1.0.1/AITracker-... is the
 // drift this guard exists to prevent: it silently stops tracking new releases.
 const PINNED_DOWNLOAD_PATTERN =
-  /https:\/\/github\.com\/estelwalks\/aitracker\/releases\/download\/[^\s)"']+/gu;
+  /https:\/\/github\.com\/zhaoyaoyuan\/aitracker\/releases\/download\/[^\s)"']+/gu;
 
 /**
  * Documented install commands must not pin a version: the READMEs are the

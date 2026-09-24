@@ -1073,11 +1073,11 @@ test("injects the unified UA into the scanner HTTP dependency", async () => {
   assert.equal(capturedInput, "https://model.example/v1/models");
   assert.equal(
     new Headers(capturedInit?.headers).get("User-Agent"),
-    `AITracker/${rootPackageJson.version} (Electron; +https://github.com/estelwalks/aitracker)`,
+    `AITracker/${rootPackageJson.version} (Electron; +https://github.com/zhaoyaoyuan/aitracker)`,
   );
   assert.equal(
     securityScannerUserAgent(),
-    `AITracker/${rootPackageJson.version} (Electron; +https://github.com/estelwalks/aitracker)`,
+    `AITracker/${rootPackageJson.version} (Electron; +https://github.com/zhaoyaoyuan/aitracker)`,
   );
 });
 

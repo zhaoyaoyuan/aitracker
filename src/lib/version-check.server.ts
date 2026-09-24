@@ -37,7 +37,7 @@ export interface VersionCheckResult {
 const releasePath = new URL(APP_REPO_URL).pathname
   .split("/")
   .filter((part) => part.length > 0);
-const RELEASE_OWNER = releasePath[0] ?? "estelwalks";
+const RELEASE_OWNER = releasePath[0] ?? "zhaoyaoyuan";
 const RELEASE_REPO = releasePath[1] ?? "aitracker";
 const CHECK_TIMEOUT_MS = 5_000;
 

@@ -5,9 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/estelwalks/aitracker/stargazers"><img src="https://img.shields.io/github/stars/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub Stars" /></a>
-  <a href="https://github.com/estelwalks/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="许可证" /></a>
-  <a href="https://github.com/estelwalks/aitracker/releases/latest"><img src="https://img.shields.io/github/v/release/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="最新 Release" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/stargazers"><img src="https://img.shields.io/github/stars/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub Stars" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="许可证" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/releases/latest"><img src="https://img.shields.io/github/v/release/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="最新 Release" /></a>
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@ AITracker 是基于 Electron、TanStack Start、React 和 TypeScript 构建的�
 - macOS 或 Windows（完整桌面体验）
 
 ```bash
-git clone https://github.com/estelwalks/aitracker.git
+git clone https://github.com/zhaoyaoyuan/aitracker.git
 cd aitracker
 npm ci
 npm run dev:desktop
@@ -71,28 +71,28 @@ npm run dev:desktop
 Release：安装包文件名不带版本号，每次发布变化的只有 tag。
 
 - macOS（Apple Silicon）：
-  [AITracker-arm64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-arm64.dmg)
+  [AITracker-arm64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-arm64.dmg)
 - macOS（Intel）：
-  [AITracker-x64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-x64.dmg)
+  [AITracker-x64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-x64.dmg)
 - Windows（x64）：
-  [AITracker-Setup-x64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
+  [AITracker-Setup-x64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
 - Windows（ARM64）：
-  [AITracker-Setup-arm64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
+  [AITracker-Setup-arm64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
 
 每个 Release 都带有该版本的 `release-metadata.json` 和 `checksums.txt`，其中记录了
 该 Release 的准确版本号与 SHA-256。需要精确复现某个构建时，请到对应 tag 的 Release
 下载，而不要使用 `latest`。
 
-所有版本可以在 [Releases 页面](https://github.com/estelwalks/aitracker/releases/latest) 查看。
+所有版本可以在 [Releases 页面](https://github.com/zhaoyaoyuan/aitracker/releases/latest) 查看。
 
 #### Homebrew（macOS）
 
 从项目自己的 Tap 安装或升级正式版 Cask：
 
 ```bash
-brew tap estelwalks/aitracker
-brew install --cask estelwalks/aitracker/aitracker
-brew upgrade --cask estelwalks/aitracker/aitracker
+brew tap zhaoyaoyuan/aitracker
+brew install --cask zhaoyaoyuan/aitracker/aitracker
+brew upgrade --cask zhaoyaoyuan/aitracker/aitracker
 ```
 
 #### WinGet（Windows）
@@ -100,8 +100,8 @@ brew upgrade --cask estelwalks/aitracker/aitracker
 从 Microsoft Community Repository 安装或升级正式版：
 
 ```powershell
-winget install --id estelwalks.AITracker -e
-winget upgrade --id estelwalks.AITracker -e
+winget install --id zhaoyaoyuan.AITracker -e
+winget upgrade --id zhaoyaoyuan.AITracker -e
 ```
 
 ### 构建与测试

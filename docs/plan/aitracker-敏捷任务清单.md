@@ -157,7 +157,7 @@ Story 开始前必须具备：
 
 #### Tasks
 
-- [x] T-2011：建立 `estelwalks/homebrew-aitracker` Tap 目录和稳定/beta Cask 模板 — macOS 发布 — 1 人日
+- [x] T-2011：建立 `zhaoyaoyuan/homebrew-aitracker` Tap 目录和稳定/beta Cask 模板 — macOS 发布 — 1 人日
 - [x] T-2012：实现 metadata 到 Cask 的生成器和 snapshot 测试 — Node.js/Ruby — 1 人日
 - [ ] T-2013：在 arm64/x64 环境执行安装、升级、卸载和 zap 冒烟 — QA — 1 人日
 
@@ -209,7 +209,7 @@ Story 开始前必须具备：
 
 - version、installer、defaultLocale 三份 manifest 从 release metadata 生成。
 - `winget validate` 和 Windows Sandbox 安装测试通过。
-- `winget install --id estelwalks.AITracker -e`、upgrade、uninstall 通过。
+- `winget install --id zhaoyaoyuan.AITracker -e`、upgrade、uninstall 通过。
 - 稳定 Release 发布后自动创建更新 PR；beta 默认不提交。
 
 #### Tasks
@@ -314,7 +314,7 @@ Story 开始前必须具备：
 - S-101 npx CLI 和 S-201 自有 Tap 的本地实现。
 - S-401 更新器频道与 checksum。
 - S-102 的真实 npm 发布、S-201 的远程 Tap 同步，以及 S-302 WinGet 生成和 Sandbox 验证后置，不计入当前完成状态。
-- 退出目标：未签名 `npx @estelwalks/aitracker --channel beta` 和 `brew install --cask estelwalks/aitracker/aitracker-beta` 的代码/模板就绪，用户能看到明确的系统安全提示说明；真实 Release 发布后再执行干净环境安装验证。
+- 退出目标：未签名 `npx @estelwalks/aitracker --channel beta` 和 `brew install --cask zhaoyaoyuan/aitracker/aitracker-beta` 的代码/模板就绪，用户能看到明确的系统安全提示说明；真实 Release 发布后再执行干净环境安装验证。
 
 ### Sprint 3：稳定发布和运营闭环
 

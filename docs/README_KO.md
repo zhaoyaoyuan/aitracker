@@ -5,9 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/estelwalks/aitracker/stargazers"><img src="https://img.shields.io/github/stars/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub Stars" /></a>
-  <a href="https://github.com/estelwalks/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="라이선스" /></a>
-  <a href="https://github.com/estelwalks/aitracker/releases/latest"><img src="https://img.shields.io/github/v/release/estelwalks/aitracker?style=flat-square&cacheSeconds=3600" alt="최신 릴리스" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/stargazers"><img src="https://img.shields.io/github/stars/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="GitHub Stars" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/blob/main/LICENSE"><img src="https://img.shields.io/github/license/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="라이선스" /></a>
+  <a href="https://github.com/zhaoyaoyuan/aitracker/releases/latest"><img src="https://img.shields.io/github/v/release/zhaoyaoyuan/aitracker?style=flat-square&cacheSeconds=3600" alt="최신 릴리스" /></a>
 </p>
 
 <p align="center">
@@ -59,7 +59,7 @@ AITracker는 Electron, TanStack Start, React와 TypeScript로 만든 데스크�
 - macOS 또는 Windows (완전한 데스크톱 환경)
 
 ```bash
-git clone https://github.com/estelwalks/aitracker.git
+git clone https://github.com/zhaoyaoyuan/aitracker.git
 cd aitracker
 npm ci
 npm run dev:desktop
@@ -74,28 +74,28 @@ npm run dev:desktop
 릴리스마다 달라지는 것은 태그뿐입니다.
 
 - macOS(Apple Silicon):
-  [AITracker-arm64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-arm64.dmg)
+  [AITracker-arm64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-arm64.dmg)
 - macOS(Intel):
-  [AITracker-x64.dmg](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-x64.dmg)
+  [AITracker-x64.dmg](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-x64.dmg)
 - Windows(x64):
-  [AITracker-Setup-x64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
+  [AITracker-Setup-x64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-x64.exe)
 - Windows(ARM64):
-  [AITracker-Setup-arm64.exe](https://github.com/estelwalks/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
+  [AITracker-Setup-arm64.exe](https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/AITracker-Setup-arm64.exe)
 
 각 릴리스에는 해당 버전의 `release-metadata.json`과 `checksums.txt`가 첨부되어 정확한
 버전과 SHA-256을 기록합니다. 특정 빌드를 재현해야 할 때는 `latest`가 아니라 해당 태그의
 릴리스에서 내려받으세요.
 
-모든 버전은 [Releases 페이지](https://github.com/estelwalks/aitracker/releases/latest)에서 확인할 수 있습니다.
+모든 버전은 [Releases 페이지](https://github.com/zhaoyaoyuan/aitracker/releases/latest)에서 확인할 수 있습니다.
 
 #### Homebrew (macOS)
 
 프로젝트 자체 Tap에서 정식 버전 Cask를 설치하거나 업그레이드하세요.
 
 ```bash
-brew tap estelwalks/aitracker
-brew install --cask estelwalks/aitracker/aitracker
-brew upgrade --cask estelwalks/aitracker/aitracker
+brew tap zhaoyaoyuan/aitracker
+brew install --cask zhaoyaoyuan/aitracker/aitracker
+brew upgrade --cask zhaoyaoyuan/aitracker/aitracker
 ```
 
 #### WinGet (Windows)
@@ -103,8 +103,8 @@ brew upgrade --cask estelwalks/aitracker/aitracker
 Microsoft Community Repository에서 정식 버전을 설치하거나 업그레이드하세요.
 
 ```powershell
-winget install --id estelwalks.AITracker -e
-winget upgrade --id estelwalks.AITracker -e
+winget install --id zhaoyaoyuan.AITracker -e
+winget upgrade --id zhaoyaoyuan.AITracker -e
 ```
 
 ### 빌드 및 테스트

@@ -26,7 +26,7 @@ AITracker 当前通过 Electron Builder 生成 macOS DMG 和 Windows NSIS 安装
 
 - `npx @estelwalks/aitracker`：为已安装 Node.js/npm 的用户提供一条命令启动安装。
 - `brew install --cask aitracker`：为 macOS 用户提供标准包管理体验。
-- `winget install --id estelwalks.AITracker -e`：为 Windows 用户提供标准包管理体验。
+- `winget install --id zhaoyaoyuan.AITracker -e`：为 Windows 用户提供标准包管理体验。
 
 本设计的核心目标是：三种渠道复用同一批经过校验和冒烟验证的桌面制品，以 GitHub Releases 为唯一权威制品源，避免出现渠道间二进制、版本和安全策略漂移。正式稳定版必须经过签名；第一阶段的 beta 允许使用未签名制品，并向用户明确 Gatekeeper/SmartScreen 风险。
 
@@ -147,7 +147,7 @@ flowchart LR
   "artifacts": {
     "darwin-arm64": {
       "name": "AITracker-arm64.dmg",
-      "url": "https://github.com/estelwalks/aitracker/releases/download/v1.0.0/AITracker-arm64.dmg",
+      "url": "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.0.0/AITracker-arm64.dmg",
       "sha256": "<hex>",
       "size": 0
     },
@@ -224,7 +224,7 @@ CLI 使用独立 `engines`，建议以 Node.js 20 为最低基线，不能继承
 
 分两阶段：
 
-- 首发阶段维护 `estelwalks/homebrew-aitracker` 自有 Tap，Phase 1 beta 命令为 `brew install --cask estelwalks/aitracker/aitracker-beta`。该阶段允许使用未签名 DMG，用户可能需要手动通过 macOS Gatekeeper 放行；当前仓库只提供模板和生成器，远程 Tap 尚未发布。
+- 首发阶段维护 `zhaoyaoyuan/homebrew-aitracker` 自有 Tap，Phase 1 beta 命令为 `brew install --cask zhaoyaoyuan/aitracker/aitracker-beta`。该阶段允许使用未签名 DMG，用户可能需要手动通过 macOS Gatekeeper 放行；当前仓库只提供模板和生成器，远程 Tap 尚未发布。
 - 获得 Apple Developer/Developer ID 并完成 notarization 后，再提交 `Homebrew/homebrew-cask`，最终支持 `brew install --cask aitracker`。官方收录完成前，README 不应宣称无 Tap 的命令可用。
 
 Cask 使用当前两份版本化 DMG，并通过 `arch` 为 Apple Silicon/Intel 分别配置 URL 与 SHA-256；artifact 为 `app "AITracker.app"`。自有 Tap 的第一阶段只要求生成的 Cask 语法/style、URL 和 hash 正确；官方 Cask 还必须通过 Gatekeeper 检查，不能要求用户绕过 Gatekeeper：[Cask Cookbook](https://docs.brew.sh/Cask-Cookbook)、[Acceptable-Casks](https://docs.brew.sh/Acceptable-Casks)。当前 beta token 为 `aitracker-beta`；稳定 token `aitracker` 仅作为后续稳定频道模板，不代表当前已有可安装的稳定 Release。
@@ -233,7 +233,7 @@ Cask 使用当前两份版本化 DMG，并通过 `arch` 为 Apple Silicon/Intel 
 
 ### 7.3 WinGet
 
-使用现有 Windows x64/arm64 NSIS 安装器，首期 PackageIdentifier 建议为 `estelwalks.AITracker`，最终 Publisher 字段必须与 Windows“应用和功能”中安装器写入的 Publisher 完全一致。
+使用现有 Windows x64/arm64 NSIS 安装器，首期 PackageIdentifier 建议为 `zhaoyaoyuan.AITracker`，最终 Publisher 字段必须与 Windows“应用和功能”中安装器写入的 Publisher 完全一致。
 
 生成三文件 manifest：version、installer、defaultLocale。关键字段包括：
 
@@ -317,7 +317,7 @@ Cask 使用当前两份版本化 DMG，并通过 `arch` 为 Apple Silicon/Intel 
 ## 13. 分阶段落地
 
 - 阶段 A：统一制品合同。补齐 metadata、checksum、频道过滤和 draft release 门禁；签名作为稳定频道 gate，不阻塞实验 beta。
-- 阶段 B（当前 Phase 1）：未签名 beta 入口。代码和模板已就绪，目标命令为 `npx @estelwalks/aitracker --channel beta` 和 `brew install --cask estelwalks/aitracker/aitracker-beta`；真实 npm/Tap 发布及用户环境验证尚未完成，并必须明确 Gatekeeper/SmartScreen 提示。
+- 阶段 B（当前 Phase 1）：未签名 beta 入口。代码和模板已就绪，目标命令为 `npx @estelwalks/aitracker --channel beta` 和 `brew install --cask zhaoyaoyuan/aitracker/aitracker-beta`；真实 npm/Tap 发布及用户环境验证尚未完成，并必须明确 Gatekeeper/SmartScreen 提示。
 - 阶段 C：稳定渠道。获得签名凭据并发布首个签名稳定版，再提交官方 Cask 和 WinGet manifest。
 - 阶段 D：自动化与运营。实现渠道 PR 自动生成、失败重试、发布状态矩阵和回滚演练。
 

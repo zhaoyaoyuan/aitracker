@@ -5,7 +5,7 @@ import type { FetchLike } from "@estelwalks/agent-threat-scanner";
 import { APP_NAME } from "./app-config.js";
 
 const require = createRequire(import.meta.url);
-const APP_REPO_URL = "https://github.com/estelwalks/aitracker";
+const APP_REPO_URL = "https://github.com/zhaoyaoyuan/aitracker";
 
 interface RootPackageJson {
   readonly version?: unknown;

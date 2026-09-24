@@ -5,12 +5,12 @@
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/estelwalks/aitracker.git",
+    "url": "git+https://github.com/zhaoyaoyuan/aitracker.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/estelwalks/aitracker#readme",
+  "homepage": "https://github.com/zhaoyaoyuan/aitracker#readme",
   "bugs": {
-    "url": "https://github.com/estelwalks/aitracker/issues"
+    "url": "https://github.com/zhaoyaoyuan/aitracker/issues"
   },
   "type": "module",
   "exports": {

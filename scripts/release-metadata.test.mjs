@@ -78,7 +78,7 @@ test("builds metadata and checksums for the four published installers", async ()
       assert.doesNotMatch(artifact.name, /\d+\.\d+\.\d+/u);
       assert.equal(
         artifact.url,
-        `https://github.com/estelwalks/aitracker/releases/latest/download/${artifact.name}`,
+        `https://github.com/zhaoyaoyuan/aitracker/releases/latest/download/${artifact.name}`,
       );
     }
     // Checksums name the files users download.
@@ -142,7 +142,7 @@ test("rejects a missing installer and malformed generator options", async () => 
     );
     assert.equal(
       parseReleaseMetadataArgs(["--version", "1.0.0"]).repository,
-      "estelwalks/aitracker",
+      "zhaoyaoyuan/aitracker",
     );
     assert.throws(
       () =>
@@ -152,7 +152,7 @@ test("rejects a missing installer and malformed generator options", async () => 
           "--repository",
           "invalid/repository",
         ]),
-      /repository must be estelwalks\/aitracker/,
+      /repository must be zhaoyaoyuan\/aitracker/,
     );
     assert.throws(
       () =>

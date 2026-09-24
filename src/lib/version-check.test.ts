@@ -110,12 +110,12 @@ test("selects the highest GitHub tag and matching installer asset", () => {
         {
           name: "AITracker-1.2.0-beta.1-arm64.dmg",
           browser_download_url:
-            "https://github.com/estelwalks/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-arm64.dmg",
+            "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-arm64.dmg",
         },
         {
           name: "AITracker-1.2.0-beta.1-x64.dmg",
           browser_download_url:
-            "https://github.com/estelwalks/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-x64.dmg",
+            "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-x64.dmg",
         },
       ],
       "darwin",
@@ -123,7 +123,7 @@ test("selects the highest GitHub tag and matching installer asset", () => {
     ),
     {
       name: "AITracker-1.2.0-beta.1-x64.dmg",
-      url: "https://github.com/estelwalks/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-x64.dmg",
+      url: "https://github.com/zhaoyaoyuan/aitracker/releases/download/v1.2.0-beta.1/AITracker-1.2.0-beta.1-x64.dmg",
     },
   );
 });

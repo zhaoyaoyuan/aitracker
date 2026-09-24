@@ -53,7 +53,7 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
 dmg:
   # Installer names carry no version: `releases/latest/download/<name>` is the
-  # stable URL the READMEs, the updater and `npx @estelwalks/aitracker` all
+  # stable URL the READMEs, the updater and `desktop installer` all
   # rely on, and it only resolves while the asset name stays the same across
   # releases. scripts/verify-release-artifact-names.mjs enforces that, and the
   # app version inside the DMG/app.asar is unaffected.

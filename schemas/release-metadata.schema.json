@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/estelwalks/aitracker/schemas/release-metadata.schema.json",
+  "$id": "https://github.com/zhaoyaoyuan/aitracker/schemas/release-metadata.schema.json",
   "title": "AITracker release metadata",
   "type": "object",
   "additionalProperties": false,
@@ -24,7 +24,7 @@
     },
     "repository": {
       "type": "string",
-      "const": "estelwalks/aitracker"
+      "const": "zhaoyaoyuan/aitracker"
     },
     "gitTag": {
       "type": "string",
@@ -57,7 +57,7 @@
         },
         "url": {
           "type": "string",
-          "pattern": "^https://github\\.com/estelwalks/aitracker/releases/(?:latest/download|download/v[^/?#]+)/[^/?#]+$",
+          "pattern": "^https://github\\.com/zhaoyaoyuan/aitracker/releases/(?:latest/download|download/v[^/?#]+)/[^/?#]+$",
           "description": "releases/latest/download/<name> for the versionless installer names, or releases/download/v<version>/<name> when an exact tag must be pinned."
         },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
