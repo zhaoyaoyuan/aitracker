@@ -7,6 +7,20 @@ uses semantic versioning for published releases.
 
 <!-- Future changes go here. -->
 
+## [1.0.7] - 2026-09-24
+
+### Highlights
+
+- Update checks now point at the correct release repository (zhaoyaoyuan/aitracker): from this version on, the in-app update check and download verification work end to end
+- **Note for 1.0.6 installs:** this one update must be installed manually — the previous build still polled the old repository and cannot see this release. From 1.0.7 onward automatic updates are self-contained
+- The npm publishing path is retired: the READMEs now document only the desktop installers plus Homebrew/WinGet
+
+### Details
+
+- Repointed every GitHub repository identifier (desktop updater, CLI release-metadata validation, README links and badges, Homebrew tap, WinGet ID) to `zhaoyaoyuan/aitracker`; the npm package name `@estelwalks/aitracker` is unchanged and no longer published.
+- Regenerated the v1.0.6 `release-metadata.json` asset so its `repository` field matches the new validation.
+- Removed the `publish-npm` workflow and its checklist entry.
+
 ## [1.0.6] - 2026-09-22
 
 ### Highlights
