@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronRight, Loader2, Wrench } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MarkdownView } from "markdown-render/react";
 
 import {
   EmptyState,
@@ -10,7 +11,7 @@ import {
 import { BrandIcon } from "../../../components/BrandIcon.tsx";
 import { useI18n } from "../../../lib/i18n/context.tsx";
 import { sourceLabel } from "../../../lib/local-usage/presentation.ts";
-import { MarkdownView } from "../../reports/presentation/index.ts";
+import { useTheme } from "../../../lib/theme.tsx";
 import type { SessionSummary, SessionTranscriptMessage } from "../contracts.ts";
 import { getSessionTranscript } from "../query.ts";
 import { ResumeSessionButton } from "./ResumeSessionButton.tsx";
@@ -309,11 +310,38 @@ function Bubble({
   );
 }
 
-/** Render assistant Markdown through the shared, React-node renderer. */
+/**
+ * Render assistant Markdown through the `markdown-render` chat pipeline
+ * (GFM, soft breaks, math, highlighting; raw HTML stays disabled for
+ * conversation content). Colors are bridged to the app theme via CSS
+ * variables; Mermaid follows the resolved light/dark theme.
+ */
 export function MarkdownTranscriptBody({ text }: { text: string }) {
+  const { theme } = useTheme();
+  const [prefersLight, setPrefersLight] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: light)");
+    setPrefersLight(query.matches);
+    const onChange = (event: MediaQueryListEvent): void =>
+      setPrefersLight(event.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  const mermaidTheme = useMemo(
+    () =>
+      theme === "light" || (theme === "system" && prefersLight)
+        ? "default"
+        : "dark",
+    [theme, prefersLight],
+  );
   return (
-    <div className="text-foreground [&>div>:first-child]:mt-0 [&>div>:last-child]:mb-0">
-      <MarkdownView source={text} hideUnusedAgentRows={false} />
+    <div className="aitracker-md text-foreground [&>div>:first-child]:mt-0 [&>div>:last-child]:mb-0">
+      <MarkdownView
+        content={text}
+        preset="chat"
+        mermaidTheme={mermaidTheme}
+        className="aitracker-md-vars"
+      />
     </div>
   );
 }

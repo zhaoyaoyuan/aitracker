@@ -2,6 +2,7 @@
 @import "@fontsource-variable/inter/wght.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 @import "@fontsource-variable/noto-sans-sc/wght.css";
+@import "markdown-render/styles.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -2887,4 +2888,46 @@ body:not(.aitracker-widget-float-document)
   .aitracker-security-line {
     animation: none !important;
   }
+}
+
+/* Session transcript: bridge the markdown-render package variables to the
+   app theme, so conversation Markdown follows light/dark without its own
+   hardcoded GitHub-style palette. */
+.aitracker-md .markdown-body,
+.aitracker-md-vars.markdown-body {
+  --md-fg: var(--foreground);
+  --md-muted: var(--muted-foreground);
+  --md-border: var(--border);
+  --md-code-bg: var(--surface-2);
+  --md-pre-bg: oklch(0 0 / 0.14);
+  --md-link: var(--primary);
+  font-size: 13px;
+  background: transparent;
+}
+
+.aitracker-md .markdown-body pre {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.aitracker-md .markdown-body code {
+  font-family: var(--font-mono);
+}
+
+.aitracker-md .markdown-body :not(pre) > code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.08em 0.35em;
+}
+
+.aitracker-md .markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.aitracker-md .markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
 }

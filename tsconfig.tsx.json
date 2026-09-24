@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    // The markdown-render package ships plain TS/TSX sources (no build step),
+    // so tsx must compile them with the project's automatic JSX runtime
+    // instead of its node_modules default (classic JSX → "React is not
+    // defined" at test/runtime).
+    "node_modules/markdown-render/src/**/*.ts",
+    "node_modules/markdown-render/src/**/*.tsx"
+  ]
+}

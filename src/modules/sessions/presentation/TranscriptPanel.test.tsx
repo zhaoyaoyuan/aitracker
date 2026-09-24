@@ -16,18 +16,26 @@ test("assistant transcript body renders Markdown instead of raw markers", () => 
   assert.match(markup, /<h2[^>]*>Result<\/h2>/);
   assert.match(markup, /<strong[^>]*>Done<\/strong>/);
   assert.match(markup, /<code[^>]*>npm test<\/code>/);
-  assert.match(markup, /<pre[^>]*>.*const ok = true;/s);
+  // The chat pipeline highlights code, so the identifier is wrapped in
+  // hljs spans; assert on the highlighted block instead of raw source.
+  assert.match(
+    markup,
+    /<pre[^>]*><code[^>]*language-ts[\s\S]*hljs-keyword[\s\S]*ok[\s\S]*true</,
+  );
   assert.doesNotMatch(markup, /## Result/);
   assert.doesNotMatch(markup, /\*\*Done\*\*/);
 });
 
-test("assistant transcript Markdown escapes raw HTML", () => {
+test("assistant transcript Markdown strips raw HTML", () => {
   const markup = renderToStaticMarkup(
     <MarkdownTranscriptBody text={'<img src=x onerror="alert(1)">'} />,
   );
 
+  // The chat preset disables raw HTML entirely: the tag is dropped, not
+  // rendered as an element and not passed through as escaped text.
   assert.doesNotMatch(markup, /<img/);
-  assert.match(markup, /&lt;img/);
+  assert.doesNotMatch(markup, /onerror/);
+  assert.doesNotMatch(markup, /alert\(1\)/);
 });
 
 test("assistant transcript Markdown renders links and hides AiPy metadata comments", () => {
